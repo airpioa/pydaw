@@ -15,7 +15,8 @@
 ```bash
 pip install pygame PyQt6 python-rtmidi vst pedalboard
 ```
-
+Chuck
+[https://chuck.stanford.edu/release/](https://chuck.stanford.edu/release/)
 
 ## Run the Application:
 
