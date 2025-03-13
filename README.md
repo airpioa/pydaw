@@ -1,42 +1,26 @@
 # pydaw
 
-**pydaw** is a Digital Audio Workstation (DAW) built with Pygame. It provides a simple interface to manage projects, tracks, sample packs, and MIDI input. The DAW allows users to create, save, and load projects, add tracks, and manipulate audio samples with various features.
+**pydaw** is a Digital Audio Workstation (DAW) built with Pygame and PyQt6. It features workspace management, MIDI handling, VST plugin support, and a settings menu.
 
 ## Features
-
-- Create and manage projects
-- Load and manage sample packs (WAV, MP3)
-- MIDI input handling (currently limited)
-- Simple user interface with a top bar, sidebar, and workspace
-- Save and open projects in `.pydaw` format
-- Settings and metadata management
+- Create, save, and load projects
+- Separate workspace window
+- Instrument support
+- VST Plugin support
+- MIDI input handling
+- Configurable settings menu
 
 ## Installation
-
-### Requirements
-
-To run **pydaw**, you need Python 3.8+ and the following dependencies:
-
-- `pygame`
-- `pygame.freetype`
-- `pygame.midi`
-- `tkinter` (for file dialogs)
-
-### Install Dependencies
-
-You can install the required dependencies using `pip`:
-
+### Requirements:
 ```bash
-pip install -r requirements.txt
+pip install pygame PyQt6 python-rtmidi vst
 ```
 
-## Run the Application
-Once the dependencies are installed, you can run the DAW using the following command:
+
+## Run the Application:
 
 ```bash
-python daw.py
+python pydaw.py
 ```
 
-## License
-This project is licensed under the MIT License - see the [LICENSE](https://github.com/airpioa/pydaw?tab=MIT-1-ov-file#) file for details.
-
+This version includes **functional buttons**, a **workspace window**, **VST support**, and **settings**. Let me know if you need changes or updates! Just make a issue
