@@ -13,7 +13,7 @@
 ## Installation
 ### Requirements:
 ```bash
-pip install pygame PyQt6 python-rtmidi vst
+pip install pygame PyQt6 python-rtmidi vst pedalboard
 ```
 
 
