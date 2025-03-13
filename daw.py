@@ -3,7 +3,7 @@ import pygame.freetype
 import os
 import json
 import sys
-import easygui  # Import easygui for file dialogs
+from PyQt6.QtWidgets import QApplication, QFileDialog, QInputDialog  # Import PyQt6 for file dialogs
 import rtmidi  # Import python-rtmidi to handle MIDI input
 
 # Initialize Pygame
@@ -67,19 +67,27 @@ available_ports = midi_in.get_ports()
 if available_ports:
     midi_in.open_port(0)  # Open the first available MIDI input port
 else:
-    midi_in.open_virtual_port("My Virtual Input")
+    midi_in.open_virtual_port("pydaw")  # Set the virtual port name to "pydaw"
 
 # Sample Pack setup (store paths to loaded samples)
 sample_pack = []
 
-# Function to handle custom file dialogs using easygui
+# Function to handle custom file dialogs using PyQt6
 def custom_file_dialog(folder_path, title="Select File"):
-    file_path = easygui.fileopenbox(msg=title, default=folder_path)
+    app = QApplication(sys.argv)
+    file_dialog = QFileDialog()
+    file_dialog.setDirectory(folder_path)
+    file_dialog.setWindowTitle(title)
+    file_path, _ = file_dialog.getOpenFileName()
     return file_path
 
 def custom_directory_dialog(folder_path, title="Select Directory"):
-    dir_path = easygui.diropenbox(msg=title, default=folder_path)
-    return dir_path
+    app = QApplication(sys.argv)
+    file_dialog = QFileDialog()
+    file_dialog.setDirectory(folder_path)
+    file_dialog.setWindowTitle(title)
+    folder_path = file_dialog.getExistingDirectory()
+    return folder_path
 
 # Function to save the current project to a .pydaw file
 def save_project():
@@ -100,17 +108,18 @@ def load_project():
 
 # Function to load a sample pack
 def load_sample_pack():
-    file_paths = easygui.fileopenbox(msg="Load Sample Pack", default=SAMPLES_DIR, filetypes=["*.wav", "*.mp3"], multiple=True)
+    file_paths = custom_file_dialog(SAMPLES_DIR, "Load Sample Pack")
     if file_paths:
         global sample_pack
-        sample_pack = list(file_paths)
+        sample_pack = [file_paths]
         project_data["sample_pack"] = sample_pack
         print(f"Loaded sample pack with {len(sample_pack)} samples.")
 
 # Function to create a new project and ask for the project name
 def new_project():
-    project_name = easygui.enterbox(msg="Enter a name for your project:")
-    if project_name:
+    app = QApplication(sys.argv)
+    project_name, ok = QInputDialog.getText(None, "New Project", "Enter a name for your project:")
+    if ok and project_name:
         global project_data
         project_data = {
             "name": project_name,
