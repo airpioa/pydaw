@@ -1,4 +1,0 @@
-
-pygame>=2.1.0
-easygui
-PyQt6
