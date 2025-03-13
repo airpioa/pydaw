@@ -13,7 +13,8 @@
 ## Installation
 ### Requirements:
 ```bash
-pip install pygame PyQt6 python-rtmidi vst pedalboard
+pip install pygame PyQt6 python-rtmidi vst pedalboard pydub simpleaudio
+
 ```
 Chuck
 [https://chuck.stanford.edu/release/](https://chuck.stanford.edu/release/)
