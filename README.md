@@ -13,7 +13,7 @@
 ## Installation
 ### Requirements:
 ```bash
-pip install pygame PyQt6 python-rtmidi vst pedalboard pydub simpleaudio font
+pip install pygame PyQt6 python-rtmidi vst pedalboard pydub simpleaudio font mido dawdreamer
 
 ```
 Chuck
