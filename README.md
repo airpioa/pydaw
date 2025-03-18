@@ -25,4 +25,4 @@ Chuck
 python pydaw.py
 ```
 
-This version includes **functional buttons**, a **workspace window**, **VST support**, and **settings**. Let me know if you need changes or updates! Just make a issue
+\
