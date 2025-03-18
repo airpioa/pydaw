@@ -23,7 +23,7 @@ This project allows users to create, manipulate, and produce audio in a simple y
 
 ---
 
-## **Installation**
+## **Building From Source**
 
 ### **1. Clone the Repository**
 
