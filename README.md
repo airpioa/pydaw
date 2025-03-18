@@ -45,48 +45,13 @@ For Lunix Users:
 pip install -r requirements-unix.txt
 ```
 AND INSTALL [wxpython](https://www.wxpython.org/pages/downloads/)
+---
 
-For **ChucK** support, make sure **ChucK** is compiled for your platform (Linux/macOS/Windows).
+
 
 ---
 
-## **Building ChucK**
-
-### **Linux**
-
-1. Install dependencies:
-   ```bash
-   sudo apt install build-essential bison flex libsndfile1-dev libasound2-dev libpulse-dev libjack-jackd2-dev
-   cd chuck/src
-   make linux-all
-   ```
-
-2. Compile **ChucK**:
-   ```bash
-   cd chuck/src
-   make mac
-   ```
-
-### **macOS**
-
-1. Install dependencies using **Homebrew**:
-   ```bash
-   brew install libsndfile
-   ```
-
-2. Compile **ChucK**:
-   ```bash
-   cd chuck
-   make mac-ub
-   ```
-
-### **Windows**
-
-1. Follow the instructions provided in the [ChucK README](https://github.com/ccrma/chuck/blob/master/README.md) for building on **Windows**. Ensure you have **Visual Studio** and **CMake** installed.
-
----
-
-## **Building PyDAW with ChucK**
+## **Building PyDAW**
 
 Once **ChucK** is compiled, you can bundle **PyDAW** with **PyInstaller**.
 
