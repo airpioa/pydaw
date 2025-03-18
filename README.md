@@ -25,7 +25,7 @@ This project allows users to create, manipulate, and produce audio in a simple y
 First, clone the **PyDAW** repository:
 ```bash
 git clone https://github.com/airpioa/pydaw.git
-cd pydaw
+cd pydaw/APP
 ```
 
 ### **2. Install Dependencies**
@@ -42,7 +42,7 @@ pip install -r requirements.txt
 
 ## **Running PyDAW**
 
-```bash/cmd
+```
 python daw.py
 ```
 
