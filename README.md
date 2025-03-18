@@ -80,7 +80,7 @@ Bundle **PyDAW** with **PyInstaller**.
      ```
 
 3. **Windows**:
-   - Use **PyInstaller** to generate a `.exe` file and package it using **Inno Setup** or **NSIS** for distribution.
+   - Use **PyInstaller** to generate a `.exe` file and package it using **Inno Setup**, **NSIS** or **ZIP** for distribution.
 
 ---
 
