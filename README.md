@@ -56,8 +56,8 @@ For **ChucK** support, make sure **ChucK** is compiled for your platform (Linux/
 
 2. Compile **ChucK**:
    ```bash
-   cd chuck
-   make
+   cd chuck/src
+   make mac
    ```
 
 ### **macOS**
