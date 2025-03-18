@@ -1,14 +1,13 @@
-import pygame
 import os
 import json
-import shutil
 import logging
-import dawdreamer  # VST plugin hosting
+import subprocess
+import pygame
+from PyQt6.QtWidgets import QApplication, QFileDialog, QVBoxLayout, QWidget, QPushButton, QLabel, QInputDialog, QMessageBox
+from PyQt6.QtGui import QIcon
 import mido  # MIDI handling
 from mido import MidiFile
-from PyQt6.QtWidgets import QApplication, QFileDialog, QVBoxLayout, QWidget, QPushButton, QLabel
-from PyQt6.QtGui import QIcon
-from pydub import AudioSegment
+import dawdreamer  # VST plugin hosting
 
 # Initialize logging
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -25,11 +24,13 @@ SCREEN_HEIGHT = 800
 FPS = 30
 PDAW_DIR = os.path.expanduser("~/pydaw")
 WORKSPACES_DIR = os.path.join(PDAW_DIR, "workspaces")
+INSTRUMENTS_DIR = os.path.join(PDAW_DIR, "instruments")
 SETTINGS_FILE = os.path.join(PDAW_DIR, "pydawsettings.json")
 
 # Ensure necessary directories exist
 os.makedirs(PDAW_DIR, exist_ok=True)
 os.makedirs(WORKSPACES_DIR, exist_ok=True)
+os.makedirs(INSTRUMENTS_DIR, exist_ok=True)
 
 # Load settings or initialize new settings
 if os.path.exists(SETTINGS_FILE):
@@ -40,29 +41,14 @@ else:
     with open(SETTINGS_FILE, "w") as f:
         json.dump(settings, f, indent=4)
 
-# UI Colors
-BACKGROUND_COLOR = (30, 30, 30)
-TEXT_COLOR = (255, 255, 255)
-
-# Fonts (Fix Pygame Font Issue)
-try:
-    font = pygame.font.Font(None, 24)  # Fallback font
-except Exception:
-    font = pygame.font.SysFont("Arial", 24)
-
-# Initialize Pygame Window
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.RESIZABLE)
-pygame.display.set_caption("pydaw - Python DAW")
-clock = pygame.time.Clock()
-
-# DawDreamer Engine for VSTs (Fix incorrect kwargs)
+# Initialize DawDreamer Engine for VST plugins
 try:
     engine = dawdreamer.RenderEngine(44100, 512)
     engine.set_bpm(120)
 except Exception as e:
     logger.error(f"Error initializing DAW Dreamer: {e}")
 
-# Workspace Management
+# Workspace Management and UI
 class WorkspaceWindow(QWidget):
     def __init__(self, workspace_name="New Workspace", workspace_path=""):
         super().__init__()
@@ -71,9 +57,15 @@ class WorkspaceWindow(QWidget):
         self.workspace_path = workspace_path
         self.setWindowIcon(QIcon("icon.png"))
         self.layout = QVBoxLayout()
+        
         self.timeline_label = QLabel("Timeline")
         self.layout.addWidget(self.timeline_label)
+
+        # Add more UI components as needed (timeline, track info, etc.)
         self.setLayout(self.layout)
+        self.chuck_processes = []
+        
+        # Load workspace contents
         self.load_workspace()
 
     def load_workspace(self):
@@ -83,6 +75,7 @@ class WorkspaceWindow(QWidget):
                 manifest_data = json.load(f)
             self.load_midi_tracks(manifest_data)
             self.load_vst_plugins(manifest_data)
+            self.load_chuck_instruments(manifest_data)
 
     def load_midi_tracks(self, manifest_data):
         if "tracks" in manifest_data:
@@ -110,7 +103,46 @@ class WorkspaceWindow(QWidget):
         except Exception as e:
             logger.error(f"Failed to load VST {vst_path}: {e}")
 
+    def load_chuck_instruments(self, manifest_data):
+        if "chuck_scripts" in manifest_data:
+            for script_path in manifest_data["chuck_scripts"]:
+                self.start_chuck_script(script_path)
+
+    def start_chuck_script(self, script_path):
+        try:
+            process = subprocess.Popen(
+                ['chuck', script_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            )
+            logger.info(f"Started ChucK script: {script_path}")
+            self.chuck_processes.append(process)
+        except Exception as e:
+            logger.error(f"Failed to start ChucK script '{script_path}': {e}")
+
 # Functions
+def create_new_workspace():
+    workspace_name, ok = QInputDialog.getText(None, "Create New Workspace", "Workspace Name:")
+    if ok and workspace_name:
+        workspace_path = os.path.join(WORKSPACES_DIR, workspace_name)
+        try:
+            os.makedirs(workspace_path, exist_ok=False)
+            os.makedirs(os.path.join(workspace_path, "instruments"), exist_ok=True)
+            logger.info(f"Workspace '{workspace_name}' created at {workspace_path}")
+            
+            # Create an empty manifest file
+            manifest_data = {"tracks": [], "vst_plugins": [], "chuck_scripts": []}
+            with open(os.path.join(workspace_path, "manifest.json"), "w") as f:
+                json.dump(manifest_data, f, indent=4)
+            
+            # Open the workspace window automatically
+            workspace_window = WorkspaceWindow(workspace_name, workspace_path)
+            workspace_window.show()
+
+        except FileExistsError:
+            QMessageBox.warning(None, "Error", f"Workspace '{workspace_name}' already exists.")
+        except Exception as e:
+            logger.error(f"Failed to create workspace '{workspace_name}': {e}")
+            QMessageBox.critical(None, "Error", f"An error occurred while creating the workspace:\n{e}")
+
 def open_workspace():
     workspace_path = QFileDialog.getExistingDirectory(None, "Open Workspace", WORKSPACES_DIR)
     if workspace_path:
@@ -118,50 +150,19 @@ def open_workspace():
         workspace_window = WorkspaceWindow(workspace_name, workspace_path)
         workspace_window.show()
 
-def create_new_workspace():
-    workspace_name, ok = QFileDialog.getText(None, "Create New Workspace", "Workspace Name:")
-    if ok and workspace_name:
-        workspace_path = os.path.join(WORKSPACES_DIR, workspace_name)
-        os.makedirs(workspace_path, exist_ok=True)
-        os.makedirs(os.path.join(workspace_path, "midi"), exist_ok=True)
-        os.makedirs(os.path.join(workspace_path, "vst"), exist_ok=True)
-        create_workspace_manifest(workspace_path)
-        workspace_window = WorkspaceWindow(workspace_name, workspace_path)
-        workspace_window.show()
-
-def create_workspace_manifest(workspace_path):
-    manifest = {
-        "name": os.path.basename(workspace_path),
-        "tracks": [],
-        "vst_plugins": [],
-        "settings": {"bpm": 120, "sample_rate": 44100},
-        "version": "1.0.0"
-    }
-    manifest_path = os.path.join(workspace_path, "manifest.json")
-    with open(manifest_path, "w") as f:
-        json.dump(manifest, f, indent=4)
-
-def import_midi_to_workspace(workspace_path):
-    midi_file, _ = QFileDialog.getOpenFileName(None, "Select MIDI File", "", "MIDI Files (*.mid)")
-    if midi_file:
-        shutil.copy(midi_file, os.path.join(workspace_path, "midi", os.path.basename(midi_file)))
-
-def import_vst_to_workspace(workspace_path):
-    vst_file, _ = QFileDialog.getOpenFileName(None, "Select VST Plugin", "", "VST Plugins (*.dll *.vst3 *.so *.dylib)")
-    if vst_file:
-        shutil.copy(vst_file, os.path.join(workspace_path, "vst", os.path.basename(vst_file)))
-
-# Main Menu
 def main():
     app = QApplication([])
     main_window = QWidget()
     main_window.setWindowTitle("PyDAW Main Menu")
     main_window.setGeometry(200, 200, 600, 400)
+    
     layout = QVBoxLayout()
     layout.addWidget(QPushButton("Create Workspace", clicked=create_new_workspace))
     layout.addWidget(QPushButton("Open Workspace", clicked=open_workspace))
+    
     main_window.setLayout(layout)
     main_window.show()
+    
     app.exec()
 
 if __name__ == "__main__":

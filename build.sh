@@ -34,6 +34,7 @@ cd ..
 
 pip install -r requirements.txt  # Install PyDAW dependencies
 pip install pyinstaller          # Install PyInstaller
+pip install py2app               # Install py2app for macOS
 
 # Create a spec file for PyInstaller
 pyi-makespec --onefile pydaw.py
@@ -52,7 +53,8 @@ fi
 
 # For macOS (create app bundle)
 if [[ "$OSTYPE" == "darwin"* ]]; then
-  python setup.py py2app
+  python setup-mac.py py2app --qt-plugins pyqt6
+  tar -czvf pydaw-macos.tar.gz ./dist/pydaw.app
 fi
 
 # For Windows (PyInstaller generates .exe, use an installer like Inno Setup)
@@ -60,4 +62,4 @@ if [[ "$OSTYPE" == "msys"* ]]; then
   echo "Please distribute the .exe file using Inno Setup or NSIS."
 fi
 
-echo "Build complete! The app is ready for distribution."
+echo "Build maybe complete! The app is ready for distribution."
