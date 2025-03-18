@@ -47,7 +47,7 @@ pip install -r requirements.txt
 
 ## **Building PyDAW**
 
-Once **ChucK** is compiled, you can bundle **PyDAW** with **PyInstaller**.
+Bundle **PyDAW** with **PyInstaller**.
 
 1. Install **PyInstaller**:
    ```bash
