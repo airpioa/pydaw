@@ -75,6 +75,7 @@ Bundle **PyDAW** with **PyInstaller**.
 2. **macOS**:
    - Build using **py2app** to create a macOS application bundle:
      ```bash
+     pip install py2app
      python setup.py py2app
      ```
 
