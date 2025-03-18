@@ -59,14 +59,11 @@ Bundle **PyDAW** with **PyInstaller**.
    pyi-makespec --onefile pydaw.py
    ```
 
-3. Modify the spec file to include **ChucK** binary (update the `binaries` section to point to the compiled **ChucK** binary).
-
-4. Build the **PyDAW** application with **ChucK** bundled:
+3. Build the **PyDAW** application with **ChucK** bundled:
    ```bash
    pyinstaller --onefile pydaw.spec
    ```
 
-5. Distribute your **PyDAW** application for your platform.
 
 ---
 
