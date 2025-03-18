@@ -40,28 +40,6 @@ pip install -r requirements.txt
 
 ---
 
-## **Building PyDAW**a **WIP**
-
-Bundle **PyDAW** with **PyInstaller**.
-
-1. Install **PyInstaller**:
-   ```bash
-   pip install pyinstaller
-   ```
-
-2. Generate the spec file for PyInstaller:
-   ```bash
-   pyi-makespec --onefile pydaw.py
-   ```
-
-3. Build the **PyDAW** application with **ChucK** bundled:
-   ```bash
-   pyinstaller --onefile pydaw.spec
-   ```
-
-
----
-
 ## **Running PyDAW**
 
 ```bash/cmd
