@@ -4,11 +4,6 @@
 
 **PyDAW** is a lightweight, feature-rich Digital Audio Workstation built in Python. It integrates several powerful features, such as:
 
-- **Virtual Instruments** & **VST Plugin** Support
-- **MIDI Sequencing** & **MIDI Instrument Integration**
-- **ChucK Integration** for real-time audio synthesis and processing
-- **PyQt6** for building a modern, customizable user interface
-
 This project allows users to create, manipulate, and produce audio in a simple yet powerful DAW environment.
 
 ---
