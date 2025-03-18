@@ -3,11 +3,12 @@ import json
 import logging
 import subprocess
 import pygame
-from PyQt6.QtWidgets import QApplication, QFileDialog, QVBoxLayout, QWidget, QPushButton, QLabel, QInputDialog, QMessageBox
-from PyQt6.QtGui import QIcon
+from PySide6.QtWidgets import QApplication, QFileDialog, QVBoxLayout, QWidget, QPushButton, QLabel, QInputDialog, QMessageBox
+from PySide6.QtGui import QIcon
 import mido  # MIDI handling
 from mido import MidiFile
 import dawdreamer  # VST plugin hosting
+import chuck 
 
 # Initialize logging
 logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -63,7 +64,7 @@ class WorkspaceWindow(QWidget):
 
         # Add more UI components as needed (timeline, track info, etc.)
         self.setLayout(self.layout)
-        self.chuck_processes = []
+        self.chuck_instance = ChucK()
         
         # Load workspace contents
         self.load_workspace()
@@ -110,11 +111,10 @@ class WorkspaceWindow(QWidget):
 
     def start_chuck_script(self, script_path):
         try:
-            process = subprocess.Popen(
-                ['chuck', script_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE
-            )
+            with open(script_path, "r") as f:
+                script_code = f.read()
+            self.chuck_instance.run(script_code)
             logger.info(f"Started ChucK script: {script_path}")
-            self.chuck_processes.append(process)
         except Exception as e:
             logger.error(f"Failed to start ChucK script '{script_path}': {e}")
 
@@ -133,10 +133,8 @@ def create_new_workspace():
             with open(os.path.join(workspace_path, "manifest.json"), "w") as f:
                 json.dump(manifest_data, f, indent=4)
             
-            # Open the workspace window automatically
             workspace_window = WorkspaceWindow(workspace_name, workspace_path)
             workspace_window.show()
-
         except FileExistsError:
             QMessageBox.warning(None, "Error", f"Workspace '{workspace_name}' already exists.")
         except Exception as e:
@@ -155,6 +153,7 @@ def main():
     main_window = QWidget()
     main_window.setWindowTitle("PyDAW Main Menu")
     main_window.setGeometry(200, 200, 600, 400)
+    main_window.setWindowIcon(QIcon("icon.png"))
     
     layout = QVBoxLayout()
     layout.addWidget(QPushButton("Create Workspace", clicked=create_new_workspace))

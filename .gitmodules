@@ -1,6 +1,0 @@
-[submodule "chuck"]
-	path = chuck
-	url = https://github.com/ccrma/chuck.git
-[submodule "gui"]
-	path = gui
-	url = https://github.com/reingart/gui2py.git

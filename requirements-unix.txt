@@ -3,4 +3,6 @@ PyQt6==6.2.0
 mido==1.2.9
 pydub==0.25.1
 dawdreamer==0.1.0
-gui2py
+PySide6
+chuck
+python-osc
