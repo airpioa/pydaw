@@ -39,12 +39,6 @@ Install Python dependencies:
 ```bash
 pip install -r requirements.txt
 ```
-For Lunix Users:
-
-```
-pip install -r requirements-unix.txt
-```
-AND INSTALL [wxpython](https://www.wxpython.org/pages/downloads/)
 ---
 
 
