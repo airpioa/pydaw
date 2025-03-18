@@ -50,8 +50,9 @@ For **ChucK** support, make sure **ChucK** is compiled for your platform (Linux/
 
 1. Install dependencies:
    ```bash
-   sudo apt-get update
-   sudo apt-get install build-essential libsndfile1-dev
+   sudo apt install build-essential bison flex libsndfile1-dev libasound2-dev libpulse-dev libjack-jackd2-dev
+   cd chuck/src
+   make linux-all
    ```
 
 2. Compile **ChucK**:
