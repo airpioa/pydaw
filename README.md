@@ -40,7 +40,7 @@ pip install -r requirements.txt
 
 ---
 
-## **Building PyDAW**
+## **Building PyDAW**a **WIP**
 
 Bundle **PyDAW** with **PyInstaller**.
 
@@ -64,18 +64,9 @@ Bundle **PyDAW** with **PyInstaller**.
 
 ## **Running PyDAW**
 
-1. **Linux**:
-   - After building the application, distribute as a `.tar.gz` or `.deb` package.
-
-2. **macOS**:
-   - Build using **py2app** to create a macOS application bundle:
-     ```bash
-     pip install py2app
-     python setup.py py2app
-     ```
-
-3. **Windows**:
-   - Use **PyInstaller** to generate a `.exe` file and package it using **Inno Setup**, **NSIS** or **ZIP** for distribution.
+```bash/cmd
+python daw.py
+```
 
 ---
 
