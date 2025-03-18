@@ -2,7 +2,7 @@
 
 # **PyDAW** - Python Digital Audio Workstation
 
-**PyDAW** is a lightweight, feature-rich Digital Audio Workstation built in Python. It integrates several powerful features, such as:
+**PyDAW** is a lightweight, feature-rich Digital Audio Workstation built in Python.
 
 This project allows users to create, manipulate, and produce audio in a simple yet powerful DAW environment.
 
