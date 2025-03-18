@@ -1,6 +1,5 @@
 import subprocess
 from PySide6.QtWidgets import QTextEdit
-from logger import logger
 
 class ChucKManager:
     def __init__(self, console: QTextEdit = None):
@@ -35,5 +34,4 @@ class ChucKManager:
             self.log_output(f"ChucK script finished: {script_path}")
 
         except Exception as e:
-            logger.error(f"Failed to start ChucK script '{script_path}': {e}")
             self.log_output(f"Error running ChucK script: {e}")
