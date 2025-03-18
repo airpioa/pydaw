@@ -56,7 +56,6 @@ For **ChucK** support, make sure **ChucK** is compiled for your platform (Linux/
 
 2. Compile **ChucK**:
    ```bash
-   git clone https://github.com/ccrma/chuck.git
    cd chuck
    make
    ```
@@ -70,6 +69,7 @@ For **ChucK** support, make sure **ChucK** is compiled for your platform (Linux/
 
 2. Compile **ChucK**:
    ```bash
+   cd chuck
    make
    ```
 
