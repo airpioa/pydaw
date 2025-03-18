@@ -98,7 +98,7 @@ Bundle **PyDAW** with **PyInstaller**.
 
 ---
 
-## **ChucK Integration**
+## **ChucK Integration** **WIP**
 
 PyDAW integrates **ChucK** for real-time audio synthesis. It allows you to run **ChucK** scripts within your workspace, giving you access to generative sound, music, and real-time audio processing. 
 
