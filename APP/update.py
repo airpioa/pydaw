@@ -17,18 +17,25 @@ REPO_OWNER = "airpioa"
 REPO_NAME = "pydaw"
 
 def get_latest_release_url():
-    """Fetch the latest release zip file URL from GitHub."""
+    """Fetch the latest release information from GitHub."""
+    api_url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/releases/latest"
+    response = requests.get(api_url)
+    
     try:
-        # GitHub API to get latest release details
-        api_url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/releases/latest"
-        response = requests.get(api_url)
         response.raise_for_status()  # Check if the request was successful
         latest_release = response.json()
-        zip_url = latest_release["assets"][0]["browser_download_url"]
-        version = latest_release["tag_name"]  # Get the version from the release
-        return zip_url, version
+        
+        # Check if assets exist
+        if latest_release.get("assets"):
+            zip_url = latest_release["assets"][0]["browser_download_url"]
+            version = latest_release["tag_name"]
+            return zip_url, version
+        else:
+            print("No assets found for the latest release.")
+            return None, None
+
     except requests.RequestException as e:
-        print(f"Error fetching the latest release: {e}")
+        print(f"Error fetching release info: {e}")
         return None, None
 
 def download_and_extract_zip(zip_url, extract_to_dir):
