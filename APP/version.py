@@ -1,61 +1,61 @@
 import os
-import json
 import requests
+import json
+import subprocess
+from pathlib import Path
 
-VERSION_FILE = os.path.expanduser('~/pydaw/version.json')
+# Path to the version file in ~/pydaw
+VERSION_FILE_PATH = os.path.expanduser("~/pydaw/version.json")
 
-def read_version():
-    """Reads the current version from the version.json file."""
-    if os.path.exists(VERSION_FILE):
-        with open(VERSION_FILE, 'r') as f:
-            data = json.load(f)
-            return data.get("version", None)
-    else:
-        return None
+# GitHub repository details
+REPO_OWNER = "airpioa"
+REPO_NAME = "pydaw"
 
-def write_version(version):
-    """Writes the current version to version.json."""
-    data = {"version": version}
-    with open(VERSION_FILE, 'w') as f:
-        json.dump(data, f, indent=4)
-
-def increment_version(version):
-    """Increments the patch version and writes it to version.json."""
-    major, minor, patch = map(int, version.split('.'))
-    patch += 1  # Increment the patch version
-    new_version = f"{major}.{minor}.{patch}"
-
-    write_version(new_version)
-    return new_version
-
-def get_latest_version_from_repo():
-    """Fetch the latest version from the repository (GitHub API in this case)."""
+def get_latest_version_from_github():
+    """Fetch the latest release version from GitHub."""
     try:
-        # Example using GitHub's API for latest release information
-        response = requests.get("https://api.github.com/repos/airpioa/pydaw/releases/latest")
-        response.raise_for_status()  # Raise an exception for HTTP errors
-        latest_version = response.json()['tag_name']
-        return latest_version
+        # GitHub API to get latest release details
+        api_url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/releases/latest"
+        response = requests.get(api_url)
+        response.raise_for_status()  # Check if the request was successful
+        latest_release = response.json()
+        version = latest_release["tag_name"]  # Get the version from the release
+        return version
     except requests.RequestException as e:
-        print(f"Error fetching latest version: {e}")
+        print(f"Error fetching the latest release: {e}")
         return None
 
-def check_for_update():
-    """Compares the current version with the latest version and updates if needed."""
-    current_version = read_version()
-    latest_version = get_latest_version_from_repo()
+def update_version_file(version):
+    """Update the version.json file with the latest version."""
+    version_data = {"version": version}
+    try:
+        with open(VERSION_FILE_PATH, 'w') as version_file:
+            json.dump(version_data, version_file, indent=4)
+        print(f"Updated version file to {version}.")
+    except IOError as e:
+        print(f"Error updating the version file: {e}")
 
-    if current_version and latest_version:
-        if current_version != latest_version:
-            print(f"Update found! Current version: {current_version}, Latest version: {latest_version}")
-            return True
-    return False
+def run_update_script():
+    """Run the update.py script to download and extract the release."""
+    try:
+        print("Running update.py script...")
+        subprocess.run(["python", "update.py"], check=True)
+        print("Update completed successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"Error during the update process: {e}")
 
-def update_version_if_needed():
-    """Check for updates and increment the version if necessary."""
-    if check_for_update():
-        print("Updating to the latest version...")
-        current_version = read_version() or "1.0.0"  # If no version exists, assume it's version 1.0.0
-        increment_version(current_version)
-        return True
-    return False
+def main():
+    # Step 1: Get the latest release version from GitHub
+    version = get_latest_version_from_github()
+    
+    if version:
+        # Step 2: Update the version file with the new version
+        update_version_file(version)
+
+        # Step 3: Run the update.py script to download the new release
+        run_update_script()
+    else:
+        print("Failed to fetch the latest version. Update aborted.")
+
+if __name__ == "__main__":
+    main()

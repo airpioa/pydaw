@@ -6,3 +6,4 @@ dawdreamer
 PySide6
 chuck
 python-osc
+requests
