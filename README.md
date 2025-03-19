@@ -20,12 +20,16 @@ This project allows users to create, manipulate, and produce audio in a simple y
 
 ## **Building From Source**
 
-### **1. Clone the Repository**
+### **1. Get The Release**
 
-First, clone the **PyDAW** repository:
+To begin, download the PyDAW repository from the GitHub releases page. The link is as follows: https://github.com/airpioa/pydaw/releases/latest.
+
+Next, compress the downloaded file.
+
+Finally, navigate to the PyDAW directory and execute the following command:
+
 ```bash
-git clone https://github.com/airpioa/pydaw.git
-cd pydaw/APP
+cd APP
 ```
 
 ### **2. Install Dependencies**
