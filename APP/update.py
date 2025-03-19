@@ -1,53 +1,80 @@
 import os
-import sys
-import subprocess
+import requests
+import zipfile
+import io
 import json
+from pathlib import Path
 
-VERSION_FILE = os.path.expanduser('~/pydaw/version.json')
+# Path to the target directory where scripts are stored
+SCRIPTS_DIR = os.path.expanduser("~/pydaw/scripts")
+APP_DIR = os.path.dirname(os.path.abspath(__file__))  # Get current directory of the script
 
-def read_version():
-    """Reads the current version from the version.json file."""
-    if os.path.exists(VERSION_FILE):
-        with open(VERSION_FILE, 'r') as f:
-            data = json.load(f)
-            return data.get("version", None)
+# Path to the version.json file
+VERSION_FILE_PATH = os.path.join(APP_DIR, "version.json")
+
+# GitHub repository details
+REPO_OWNER = "airpioa"
+REPO_NAME = "pydaw"
+
+def get_latest_release_url():
+    """Fetch the latest release zip file URL from GitHub."""
+    try:
+        # GitHub API to get latest release details
+        api_url = f"https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/releases/latest"
+        response = requests.get(api_url)
+        response.raise_for_status()  # Check if the request was successful
+        latest_release = response.json()
+        zip_url = latest_release["assets"][0]["browser_download_url"]
+        version = latest_release["tag_name"]  # Get the version from the release
+        return zip_url, version
+    except requests.RequestException as e:
+        print(f"Error fetching the latest release: {e}")
+        return None, None
+
+def download_and_extract_zip(zip_url, extract_to_dir):
+    """Download the .zip file and extract its contents."""
+    try:
+        # Download the .zip file
+        print("Downloading the latest release...")
+        response = requests.get(zip_url)
+        response.raise_for_status()  # Check if the request was successful
+
+        # Extract the content of the zip file in-memory
+        with zipfile.ZipFile(io.BytesIO(response.content)) as zip_ref:
+            print(f"Extracting files to {extract_to_dir}...")
+            zip_ref.extractall(extract_to_dir)
+        print("Extraction complete.")
+    except requests.RequestException as e:
+        print(f"Error downloading or extracting the zip file: {e}")
+
+def update_version_file(version):
+    """Update the version file with the latest version."""
+    version_data = {"version": version}
+    try:
+        with open(VERSION_FILE_PATH, 'w') as version_file:
+            json.dump(version_data, version_file, indent=4)
+        print(f"Updated version file to {version}.")
+    except IOError as e:
+        print(f"Error updating the version file: {e}")
+
+def update_scripts():
+    """Update scripts by downloading and extracting the latest release."""
+    # Step 1: Get the URL of the latest release zip file and version
+    zip_url, version = get_latest_release_url()
+
+    if zip_url and version:
+        # Step 2: Download and extract the zip file to the scripts directory
+        download_and_extract_zip(zip_url, SCRIPTS_DIR)
+        
+        # Step 3: Update the version file with the new version
+        update_version_file(version)
     else:
-        return None
+        print("Failed to retrieve the latest release URL. Update aborted.")
 
-def write_version(version):
-    """Writes the current version to version.json."""
-    data = {"version": version}
-    with open(VERSION_FILE, 'w') as f:
-        json.dump(data, f, indent=4)
+def clean_up_previous_versions():
+    """Optionally clean up previous versions if necessary."""
+    # You could add logic here to remove old or conflicting files if required
+    pass
 
-def increment_version():
-    """Increments the version (patch version)."""
-    version = read_version()
-    if version is None:
-        version = "1.0.0"  # Set the default version if the file doesn't exist
-
-    major, minor, patch = map(int, version.split('.'))
-    patch += 1  # Increment the patch version
-    new_version = f"{major}.{minor}.{patch}"
-    
-    write_version(new_version)
-    return new_version
-
-def check_for_updates():
-    """Checks for updates and restarts the app if needed."""
-    # Simulate update check (you can replace with real update check logic)
-    print("Checking for updates...")
-
-    # For now, let's assume we always need to update
-    updated = True
-
-    if updated:
-        print("Update found. Restarting the app...")
-
-        # Close the current app instance
-        sys.exit(0)  # Close the current application
-
-        # Restart the app by invoking the main script
-        subprocess.Popen([sys.executable, os.path.abspath(__file__)])  # Restart the app
-        sys.exit(0)
-
+if __name__ == "__main__":
+    update_scripts()  # Run the update process
