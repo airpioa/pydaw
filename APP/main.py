@@ -5,7 +5,6 @@ import time
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton
 from PySide6.QtGui import QIcon
 from ui import create_new_workspace, open_workspace  # Import UI functions from ui.py
-from version import update_version_if_needed  # Import the version management function from version.py
 
 def run_version_update_script():
     """Run the version.py script to check for updates and update the version."""
