@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-
+# -*- coding: utf-8 -*- 
 
 import os
 import requests
@@ -32,8 +31,10 @@ def update_version_file(version):
     """Update the version.json file with the latest version."""
     version_data = {"version": version}
     try:
-        with open(VERSION_FILE_PATH, 'w') as version_file:
-            json.dump(version_data, version_file, indent=4)
+        # Make sure the directory exists before writing
+        os.makedirs(os.path.dirname(VERSION_FILE_PATH), exist_ok=True)
+        with open(VERSION_FILE_PATH, 'w', encoding='utf-8') as version_file:
+            json.dump(version_data, version_file, indent=4, ensure_ascii=False)
         print(f"Updated version file to {version}.")
     except IOError as e:
         print(f"Error updating the version file: {e}")
@@ -42,10 +43,19 @@ def run_update_script():
     """Run the update.py script to download and extract the release."""
     try:
         print("Running update.py script...")
-        subprocess.run(["python", "update.py"], check=True)
+        update_script_path = os.path.expanduser("~/pydaw/scripts/update.py")
+        
+        # Ensure the script exists
+        if not os.path.exists(update_script_path):
+            print(f"Error: {update_script_path} does not exist.")
+            return
+        
+        subprocess.run(["python", update_script_path], check=True)
         print("Update completed successfully.")
     except subprocess.CalledProcessError as e:
         print(f"Error during the update process: {e}")
+    except FileNotFoundError as e:
+        print(f"FileNotFoundError: {e}")
 
 def main():
     # Step 1: Get the latest release version from GitHub
