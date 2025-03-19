@@ -1,50 +1,53 @@
-import requests
 import os
+import sys
 import subprocess
 import json
-from PySide6.QtWidgets import QMessageBox
 
-# Define the repository URL and local directory for PyDAW
-REPO_URL = "https://api.github.com/repos/airpioa/pydaw/releases/latest"
-LOCAL_DIR = os.path.expanduser('~/pydaw')
+VERSION_FILE = os.path.expanduser('~/pydaw/version.json')
+
+def read_version():
+    """Reads the current version from the version.json file."""
+    if os.path.exists(VERSION_FILE):
+        with open(VERSION_FILE, 'r') as f:
+            data = json.load(f)
+            return data.get("version", None)
+    else:
+        return None
+
+def write_version(version):
+    """Writes the current version to version.json."""
+    data = {"version": version}
+    with open(VERSION_FILE, 'w') as f:
+        json.dump(data, f, indent=4)
+
+def increment_version():
+    """Increments the version (patch version)."""
+    version = read_version()
+    if version is None:
+        version = "1.0.0"  # Set the default version if the file doesn't exist
+
+    major, minor, patch = map(int, version.split('.'))
+    patch += 1  # Increment the patch version
+    new_version = f"{major}.{minor}.{patch}"
+    
+    write_version(new_version)
+    return new_version
 
 def check_for_updates():
-    try:
-        # Get the latest release from GitHub
-        response = requests.get(REPO_URL)
-        response.raise_for_status()
-        
-        latest_release = response.json()
-        latest_version = latest_release['tag_name']
-        
-        # Check current version (assumed to be stored in a JSON file)
-        with open(os.path.join(LOCAL_DIR, 'version.json'), 'r') as f:
-            current_version = json.load(f)['version']
-        
-        # Compare versions and update if necessary
-        if latest_version != current_version:
-            update_code(latest_release['zipball_url'])
-        else:
-            show_message("You are using the latest version.")
-    except Exception as e:
-        show_message(f"Error checking for updates: {e}")
+    """Checks for updates and restarts the app if needed."""
+    # Simulate update check (you can replace with real update check logic)
+    print("Checking for updates...")
 
-def update_code(zipball_url):
-    try:
-        # Download and unzip the latest release
-        response = requests.get(zipball_url, stream=True)
-        zip_path = os.path.join(LOCAL_DIR, 'update.zip')
-        
-        with open(zip_path, 'wb') as f:
-            f.write(response.content)
+    # For now, let's assume we always need to update
+    updated = True
 
-        # Extract and replace the current code
-        subprocess.run(["unzip", "-o", zip_path, "-d", LOCAL_DIR])
-        os.remove(zip_path)
-        show_message("Update complete!")
-    except Exception as e:
-        show_message(f"Error updating the code: {e}")
+    if updated:
+        print("Update found. Restarting the app...")
 
-def show_message(message):
-    # Display a simple message box
-    QMessageBox.information(None, "Update", message)
+        # Close the current app instance
+        sys.exit(0)  # Close the current application
+
+        # Restart the app by invoking the main script
+        subprocess.Popen([sys.executable, os.path.abspath(__file__)])  # Restart the app
+        sys.exit(0)
+
