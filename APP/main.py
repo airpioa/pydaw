@@ -2,15 +2,35 @@ import sys
 import os
 import subprocess
 import time
+
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton
 from PySide6.QtGui import QIcon
 from ui import create_new_workspace, open_workspace  # Import UI functions from ui.py
 
+def check_for_null_bytes(file_path):
+    """Check if a file contains null bytes and remove them if found."""
+    with open(file_path, 'rb') as file:
+        content = file.read()
+        if b'\x00' in content:
+            print("Null bytes found in the file. Cleaning up...")
+            # Remove null bytes from content
+            content = content.replace(b'\x00', b'')
+            with open(file_path, 'wb') as clean_file:
+                clean_file.write(content)
+            print("Null bytes removed successfully.")
+            return True  # Null bytes were found and removed
+    return False  # No null bytes found
+
 def run_version_update_script():
     """Run the version.py script to check for updates and update the version."""
+    version_file_path = os.path.expanduser("~/pydaw/scripts/version.py")
+    
+    if check_for_null_bytes(version_file_path):  # Check and clean null bytes if found
+        print("Version script cleaned up due to null bytes.")
+    
     try:
         print("Running version update script...")
-        subprocess.run(["python", os.path.expanduser("~/pydaw/version.py")], check=True)
+        subprocess.run(["python", version_file_path], check=True)
         print("Version update completed successfully.")
     except subprocess.CalledProcessError as e:
         print(f"Error running the version update script: {e}")
