@@ -1,17 +1,26 @@
 import sys
 import os
+import subprocess
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton
 from PySide6.QtGui import QIcon
 from ui import create_new_workspace, open_workspace  # Import workspace functions
-import subprocess
 
 # Ensure scripts directory exists
 SCRIPTS_DIR = os.path.expanduser("~/pydaw/scripts")
 os.makedirs(SCRIPTS_DIR, exist_ok=True)
 
+def run_version_update_script():
+    """Run the version.py script to update the version if needed."""
+    try:
+        print("Running version update script...")
+        subprocess.run(["python", os.path.expanduser("~/pydaw/scripts/version.py")], check=True)
+        print("Version update script completed successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"Error running version update script: {e}")
+
 def main():
-    # Check for updates and update the version if needed
-    subprocess.run(["python", "version.py"], cwd=SCRIPTS_DIR, capture_output=True, text=True)
+    # Run the version update script as a subprocess
+    run_version_update_script()
 
     # Ensure QApplication is created only once
     app = QApplication.instance()
