@@ -55,7 +55,7 @@ def update_pydaw():
     
     log(f"Cloning PyDAW {latest_tag} into temporary directory...")
     try:
-        subprocess.run(["git", "clone", "--depth", "1", "--branch", latest_tag, GIT_CLONE_URL, temp_dir], check=True)
+        subprocess.run(["git", "clone", "--depth", "1", "--single-branch", "--branch", latest_tag, GIT_CLONE_URL, temp_dir], check=True)
     except subprocess.CalledProcessError as e:
         log(f"Git clone failed: {e.stderr}")
         return False
