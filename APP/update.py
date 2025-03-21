@@ -3,6 +3,7 @@ import shutil
 import subprocess
 import json
 import tempfile
+import re
 
 # GitHub repository details
 GITHUB_REPO = "airpioa/pydaw"
@@ -27,13 +28,16 @@ def get_latest_release_tag():
             ["git", "ls-remote", "--tags", GIT_CLONE_URL],
             capture_output=True, text=True, check=True
         )
-        tags = [line.split("refs/tags/")[1] for line in result.stdout.splitlines() if "refs/tags/" in line]
+        
+        # Extract only valid numeric version tags
+        tags = re.findall(r"refs/tags/v?(\d+\.\d+\.\d+)", result.stdout)
+
         if tags:
-            latest_tag = sorted(tags, key=lambda v: [int(x) for x in v.lstrip("v").split(".")])[-1]
-            log(f"Latest release tag found: {latest_tag}")
-            return latest_tag
+            latest_tag = sorted(tags, key=lambda v: [int(x) for x in v.split(".")])[-1]
+            log(f"Latest release tag found: v{latest_tag}")
+            return f"v{latest_tag}"
         else:
-            log("No release tags found.")
+            log("No valid numeric release tags found.")
             return None
     except subprocess.CalledProcessError as e:
         log(f"Error fetching release tags: {e.stderr}")
