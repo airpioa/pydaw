@@ -3,11 +3,10 @@ import shutil
 import subprocess
 import json
 import tempfile
-from urllib.request import urlopen
 
 # GitHub repository details
 GITHUB_REPO = "airpioa/pydaw"
-GITHUB_API_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
+GIT_CLONE_URL = f"https://github.com/{GITHUB_REPO}.git"
 
 # Paths
 PYDAW_DIR = os.path.expanduser("~/pydaw")
@@ -20,37 +19,39 @@ def log(message):
     print(f"[UPDATE] {message}")
 
 
-def get_latest_release():
-    """Fetches the latest release tag and repo URL from GitHub."""
-    log("Fetching latest release info from GitHub...")
+def get_latest_release_tag():
+    """Gets the latest release tag from GitHub using git ls-remote."""
+    log("Fetching latest release tag from GitHub...")
     try:
-        with urlopen(GITHUB_API_URL) as response:
-            latest_release = json.load(response)
-
-        if "tag_name" not in latest_release:
-            raise ValueError("Invalid release data received.")
-
-        tag = latest_release["tag_name"]
-        log(f"Latest release found: {tag}")
-        return tag
-    except Exception as e:
-        log(f"Error fetching release info: {e}")
+        result = subprocess.run(
+            ["git", "ls-remote", "--tags", GIT_CLONE_URL],
+            capture_output=True, text=True, check=True
+        )
+        tags = [line.split("refs/tags/")[1] for line in result.stdout.splitlines() if "refs/tags/" in line]
+        if tags:
+            latest_tag = sorted(tags, key=lambda v: [int(x) for x in v.lstrip("v").split(".")])[-1]
+            log(f"Latest release tag found: {latest_tag}")
+            return latest_tag
+        else:
+            log("No release tags found.")
+            return None
+    except subprocess.CalledProcessError as e:
+        log(f"Error fetching release tags: {e.stderr}")
         return None
 
 
 def update_pydaw():
-    """Clones the latest PyDAW release and updates the installation."""
-    tag = get_latest_release()
-    if not tag:
+    """Clones the latest PyDAW release into a temporary directory and updates the installation."""
+    latest_tag = get_latest_release_tag()
+    if not latest_tag:
         log("Failed to get the latest release. Update aborted.")
         return False
 
     temp_dir = tempfile.mkdtemp()
-    clone_url = f"https://github.com/{GITHUB_REPO}.git"
-
-    log(f"Cloning PyDAW {tag} into temporary directory...")
+    
+    log(f"Cloning PyDAW {latest_tag} into temporary directory...")
     try:
-        subprocess.run(["git", "clone", "--depth", "1", "--branch", tag, clone_url, temp_dir], check=True, capture_output=True, text=True)
+        subprocess.run(["git", "clone", "--depth", "1", "--branch", latest_tag, GIT_CLONE_URL, temp_dir], check=True)
     except subprocess.CalledProcessError as e:
         log(f"Git clone failed: {e.stderr}")
         return False
@@ -75,16 +76,16 @@ def update_pydaw():
 
 def update_version():
     """Updates version.json with the latest release tag."""
-    tag = get_latest_release()
-    if not tag:
+    latest_tag = get_latest_release_tag()
+    if not latest_tag:
         log("Skipping version update due to missing release info.")
         return False
 
-    version_data = {"version": tag}
+    version_data = {"version": latest_tag}
     with open(VERSION_FILE, "w") as f:
         json.dump(version_data, f, indent=4)
 
-    log(f"Updated version file to {tag}.")
+    log(f"Updated version file to {latest_tag}.")
     return True
 
 
@@ -100,16 +101,13 @@ def restart_pydaw():
 if __name__ == "__main__":
     log("Starting update script...")
     try:
-        updated = update_pydaw()
-        if updated:
-            version_updated = update_version()
-            if version_updated:
+        if update_pydaw():
+            if update_version():
                 log("Update successful. Restarting PyDAW...")
                 restart_pydaw()
             else:
                 log("Version update failed. PyDAW may not be up-to-date.")
         else:
             log("Update failed. Check errors above.")
-
     except Exception as e:
         log(f"Update failed: {e}")
