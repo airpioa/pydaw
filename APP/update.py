@@ -1,46 +1,31 @@
 import os
-import shutil
-import subprocess
 import json
 import tempfile
-import re
+import shutil
+import subprocess
+import requests
 
-# GitHub repository details
-GITHUB_REPO = "airpioa/pydaw"
-GIT_CLONE_URL = f"https://github.com/{GITHUB_REPO}.git"
-
-# Paths
+# Constants
+GITHUB_API_URL = "https://api.github.com/repos/airpioa/pydaw/releases/latest"
+GIT_CLONE_URL = "https://github.com/airpioa/pydaw.git"
 PYDAW_DIR = os.path.expanduser("~/pydaw")
-MAIN_FILE = os.path.join(PYDAW_DIR, "main.py")
-VERSION_FILE = os.path.join(PYDAW_DIR, "version.json")
 
 
 def log(message):
-    """Logs a message to the console."""
+    """Logs messages with an [UPDATE] prefix."""
     print(f"[UPDATE] {message}")
 
 
 def get_latest_release_tag():
-    """Gets the latest release tag from GitHub using git ls-remote."""
+    """Fetches the latest release tag from GitHub."""
     log("Fetching latest release tag from GitHub...")
     try:
-        result = subprocess.run(
-            ["git", "ls-remote", "--tags", GIT_CLONE_URL],
-            capture_output=True, text=True, check=True
-        )
-        
-        # Extract only valid numeric version tags
-        tags = re.findall(r"refs/tags/v?(\d+\.\d+\.\d+)", result.stdout)
-
-        if tags:
-            latest_tag = sorted(tags, key=lambda v: [int(x) for x in v.split(".")])[-1]
-            log(f"Latest release tag found: v{latest_tag}")
-            return f"v{latest_tag}"
-        else:
-            log("No valid numeric release tags found.")
-            return None
-    except subprocess.CalledProcessError as e:
-        log(f"Error fetching release tags: {e.stderr}")
+        response = requests.get(GITHUB_API_URL, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+        return data.get("tag_name")
+    except (requests.RequestException, json.JSONDecodeError) as e:
+        log(f"Failed to fetch release tag: {e}")
         return None
 
 
@@ -55,9 +40,11 @@ def update_pydaw():
     
     log(f"Cloning PyDAW {latest_tag} into temporary directory...")
     try:
-        subprocess.run(["git", "clone", "--depth", "1", "--branch", latest_tag, GIT_CLONE_URL, temp_dir], check=True)
+        subprocess.run(["git", "clone", "--depth", "1", GIT_CLONE_URL, temp_dir], check=True)
+        subprocess.run(["git", "fetch", "--tags"], cwd=temp_dir, check=True)
+        subprocess.run(["git", "checkout", latest_tag], cwd=temp_dir, check=True)
     except subprocess.CalledProcessError as e:
-        log(f"Git clone failed: {e.stderr}")
+        log(f"Git clone failed: {e}")
         return False
 
     log("Replacing existing PyDAW files...")
@@ -78,40 +65,9 @@ def update_pydaw():
     return True
 
 
-def update_version():
-    """Updates version.json with the latest release tag."""
-    latest_tag = get_latest_release_tag()
-    if not latest_tag:
-        log("Skipping version update due to missing release info.")
-        return False
-
-    version_data = {"version": latest_tag}
-    with open(VERSION_FILE, "w") as f:
-        json.dump(version_data, f, indent=4)
-
-    log(f"Updated version file to {latest_tag}.")
-    return True
-
-
-def restart_pydaw():
-    """Restarts PyDAW after updating."""
-    log("Restarting PyDAW...")
-    if os.path.exists(MAIN_FILE):
-        subprocess.run(["python", MAIN_FILE], check=False)
-    else:
-        log("Error: main.py not found after update!")
-
-
 if __name__ == "__main__":
     log("Starting update script...")
-    try:
-        if update_pydaw():
-            if update_version():
-                log("Update successful. Restarting PyDAW...")
-                restart_pydaw()
-            else:
-                log("Version update failed. PyDAW may not be up-to-date.")
-        else:
-            log("Update failed. Check errors above.")
-    except Exception as e:
-        log(f"Update failed: {e}")
+    if update_pydaw():
+        log("Update completed successfully.")
+    else:
+        log("Update failed. Check errors above.")
