@@ -7,3 +7,4 @@ PySide6
 chuck
 python-osc
 requests
+py2app
