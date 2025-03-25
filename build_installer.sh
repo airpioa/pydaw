@@ -1,30 +1,75 @@
 #!/bin/bash
 
-echo "[BUILD] Building PyDAW Installer..."
+# Set the installer and uninstaller scripts
+INSTALLER_SCRIPT="installer.py"
+UNINSTALLER_SCRIPT="uninstaller.py"
 
-# Install PyInstaller if not present
-pip show pyinstaller >/dev/null || pip install pyinstaller
+# Set the output directory
+OUTPUT_DIR="dist"
 
-# Remove previous builds
-rm -rf dist build PyDAW_Installer.spec
+# Clean up old build directories
+clean() {
+    echo "Cleaning up old builds..."
+    rm -rf build dist *.spec
+}
 
-# Detect OS
-OS="$(uname)"
-if [[ "$OS" == "Darwin" ]]; then
-    TARGET="macOS"
-elif [[ "$OS" == "Linux" ]]; then
-    TARGET="Linux"
-else
-    TARGET="Windows"
-fi
+# Build the app using PyInstaller
+build_app() {
+    local script_name="$1"
+    local output_name="$2"
 
-echo "[BUILD] Detected OS: $TARGET"
+    echo "Building $output_name..."
 
-# Build standalone installer
-pyinstaller --onefile --noconsole --name=PyDAW_Installer installer.py
+    pyinstaller --onefile --windowed --add-data "icon.png:." "$script_name"
 
-# Move output to release directory
-mkdir -p release
-mv dist/PyDAW_Installer release/PyDAW_Installer-"$TARGET"
+    # Move the built app to the desired output directory
+    mv "dist/$(basename "$script_name" .py)" "$OUTPUT_DIR/$output_name"
+}
 
-echo "[BUILD] Build complete! Output: release/PyDAW_Installer-$TARGET"
+# Check if PyInstaller is installed
+check_pyinstaller() {
+    if ! command -v pyinstaller &> /dev/null; then
+        echo "PyInstaller is not installed. Installing it now..."
+        pip install pyinstaller
+    fi
+}
+
+# Main function to build both the installer and uninstaller
+main() {
+    # Check if PyInstaller is installed
+    check_pyinstaller
+
+    # Clean up old build directories
+    clean
+
+    # Create the output directory if it doesn't exist
+    if [ ! -d "$OUTPUT_DIR" ]; then
+        mkdir "$OUTPUT_DIR"
+    fi
+
+    # Build the installer app
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        build_app "$INSTALLER_SCRIPT" "PyDAW_Installer.app"
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        build_app "$INSTALLER_SCRIPT" "PyDAW_Installer"
+    elif [[ "$OSTYPE" == "cygwin" || "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
+        build_app "$INSTALLER_SCRIPT" "PyDAW_Installer.exe"
+    fi
+
+    echo "Installer app built at $OUTPUT_DIR"
+
+    # Build the uninstaller app
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        build_app "$UNINSTALLER_SCRIPT" "PyDAW_Uninstaller.app"
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        build_app "$UNINSTALLER_SCRIPT" "PyDAW_Uninstaller"
+    elif [[ "$OSTYPE" == "cygwin" || "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
+        build_app "$UNINSTALLER_SCRIPT" "PyDAW_Uninstaller.exe"
+    fi
+
+    echo "Uninstaller app built at $OUTPUT_DIR"
+    echo "Build complete!"
+}
+
+# Run the main function
+main
