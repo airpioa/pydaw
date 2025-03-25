@@ -1,6 +1,4 @@
-Here's the updated README file with instructions for launching the installer, installing PyDAW, and using the uninstaller:
 
----
 
 # **PyDAW** - Python Digital Audio Workstation
 
