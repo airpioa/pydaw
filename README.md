@@ -1,4 +1,6 @@
+Here's the updated README file with instructions for launching the installer, installing PyDAW, and using the uninstaller:
 
+---
 
 # **PyDAW** - Python Digital Audio Workstation
 
@@ -18,35 +20,42 @@ This project allows users to create, manipulate, and produce audio in a simple y
 
 ---
 
-## **Building From Source**
+## **Running the Installer**
 
-### **1. Get The Release**
+To install **PyDAW**, you'll need to run the installer script. The installer will guide you through the process of setting up **PyDAW** on your system.
 
-To begin, download the PyDAW repository from the GitHub releases page. The link is as follows: https://github.com/airpioa/pydaw/releases/latest.
+1. **Ensure Python is installed**: If Python is not installed on your system, you can download it from [python.org](https://www.python.org/downloads/).
 
-Next, compress the downloaded file.
+**Step 2: Download installer.py Script**
 
-Finally, navigate to the PyDAW directory and execute the following command:
+Access the latest release of the PyDAW project at the following link: https://github.com/airpioa/pydaw/releases/latest
 
-```bash
-cd APP
-```
+Download the installer.py script.
 
-### **2. Install Dependencies**
+Navigate to the directory where the installer.py script was downloaded.
 
-Install Python dependencies:
-```bash
-pip install -r requirements.txt
-```
----
+Proceed to Step 3.
 
+3. **Run the Installer Script**:
+   
+   Once the dependencies are installed, run the following command to start the installer:
+   ```bash
+   python installer.py
+   ```
 
+4. **Follow the Installer Steps**: The installer will ask you for the installation location. After you specify a location, it will automatically download dependencies, configure PyDAW, and set up an application bundle or shortcut based on your platform (macOS, Windows, or Linux).
+
+5. **Complete Installation**: After installation, you can launch PyDAW from the application bundle (macOS) or start menu (Windows).
 
 ---
 
 ## **Running PyDAW**
 
-```
+Once installed, you can launch **PyDAW** from your installation location or through the application shortcut created by the installer.
+
+To run PyDAW manually:
+
+```bash
 python daw.py
 ```
 
@@ -74,6 +83,25 @@ To use **ChucK** in your workspace, simply add a **ChucK** script file in the wo
 
 ---
 
+## **Uninstalling PyDAW**
+
+If you want to remove **PyDAW** from your system, you can run the uninstaller script.
+
+### Steps to run the uninstaller:
+
+1. **Run the Uninstaller Script**:
+   ```bash
+   python uninstaller.py
+   ```
+
+2. **Follow the Uninstaller Steps**: The uninstaller will remove **PyDAW** from your system and clean up any installation files.
+
+3. **Confirm the Removal**: The uninstaller will prompt you with a warning before proceeding with the deletion. Confirm to proceed.
+
+   > **Warning**: This action will remove all PyDAW files and settings.
+
+---
+
 ## **Contributing**
 
 We welcome contributions to improve **PyDAW**! Feel free to fork the repository, make changes, and submit a pull request.
@@ -92,3 +120,5 @@ This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) f
 - **PyQt6**: A set of Python bindings for the Qt application framework, used for building the UI.
 - **Pygame**: Used for initializing the audio and graphical features in the DAW.
 - **mido**: Python library for working with MIDI.
+
+---
