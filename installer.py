@@ -59,7 +59,7 @@ class InstallLocationDialog(QDialog):
 
         layout = QVBoxLayout()
 
-        self.install_location_label = QLabel("Enter installation directory (auto installes to path/pydaw):")
+        self.install_location_label = QLabel("Enter installation directory (auto installs to path/pydaw):")
         self.install_location = QLineEdit(self)
         self.install_location.setText(os.path.expanduser("~/"))
         layout.addWidget(self.install_location_label)
@@ -92,9 +92,9 @@ class InstallWorker(QThread):
             self.install_python()
             self.clone_pydaw()
             self.install_requirements()
-            
-            # Create shortcuts (macOS - .app package, Windows - start menu shortcut)
-            self.create_shortcut()
+
+            # Create the .app and move it to Applications folder
+            self.create_mac_app_bundle()
 
             # Cleanup temporary files
             self.cleanup()
@@ -136,67 +136,84 @@ class InstallWorker(QThread):
             if sys.platform == "darwin":
                 subprocess.run(["brew", "install", "python3"], check=True)
             elif sys.platform == "linux":
-                subprocess.run(["sudo", "apt-get", "install", "-y", "python3", "python3-pip"], check=True)
+                subprocess.run(["sudo", "apt-get", "install", "-y", "python3"], check=True)
             elif sys.platform == "win32":
                 subprocess.run(["winget", "install", "--id", "Python.Python.3", "--silent"], check=True)
             self.log.emit("Python installed.")
 
-    def is_installed(self, command):
-        """Check if a command is installed."""
-        try:
-            subprocess.run([command, "--version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
-            return True
-        except Exception:
-            return False
-
     def clone_pydaw(self):
-        """Clone PyDAW repository."""
-        self.log.emit("Cloning PyDAW...")
-        self.temp_dir = "/tmp/pydaw" if sys.platform != "win32" else os.path.join(os.environ["TEMP"], "pydaw")
-        subprocess.run(["git", "clone", "--depth", "1", "https://github.com/airpioa/pydaw.git", self.temp_dir], check=True)
-        if os.path.exists(self.temp_dir):
-            self.log.emit("PyDAW installed.")
+        """Clone the PyDAW repository into the user-defined path/pydaw folder."""
+        self.log.emit("Cloning PyDAW repository...")
+
+        # Ensure the user-defined directory exists
+        if not os.path.exists(self.install_location):
+            os.makedirs(self.install_location)
+
+        # Define the full path where PyDAW will be cloned
+        pydaw_path = os.path.join(self.install_location, "pydaw")
+
+        # Clone the repository into the pydaw directory
+        subprocess.run(["git", "clone", "https://github.com/airpioa/pydaw.git", pydaw_path], check=True)
+        self.log.emit("PyDAW cloned into path/pydaw.")
 
     def install_requirements(self):
-        """Install dependencies from requirements.txt."""
-        self.log.emit("Installing dependencies...")
-        requirements_file = os.path.join(self.temp_dir, "requirements.txt")
+        """Install the necessary Python requirements."""
+        self.log.emit("Installing Python requirements...")
+        subprocess.run([sys.executable, "-m", "pip", "install", "-r", os.path.join(self.install_location, "pydaw", "requirements.txt")], check=True)
+        self.log.emit("Python requirements installed.")
 
-        if os.path.exists(requirements_file):
-            subprocess.run([sys.executable, "-m", "pip", "install", "-r", requirements_file], check=True)
-            self.log.emit("Dependencies installed.")
-        else:
-            self.log.emit("No requirements.txt found. Skipping dependencies.")
+    def create_mac_app_bundle(self):
+        """Create a macOS .app bundle for easy launching and move it to Applications."""
+        app_path = os.path.join(self.install_location, "PyDAW.app")
+        if not os.path.exists(app_path):
+            subprocess.run(["mkdir", "-p", app_path], check=True)
+            # Create a setup.py script to package the .app using py2app
+            setup_py = os.path.join(self.install_location, "setup.py")
+            with open(setup_py, "w") as f:
+                f.write(f"""
+from setuptools import setup
 
-    def create_shortcut(self):
-        """Create shortcuts in Start Menu (Windows) or Applications (macOS)."""
-        self.log.emit("Creating application shortcut...")
+APP = ['{os.path.join(self.install_location, 'pydaw', 'main.py')}']
+DATA_FILES = []
+OPTIONS = {{
+    'argv_emulation': True,
+    'packages': ['PySide6'],
+}}
 
-        os.makedirs(self.install_location, exist_ok=True)
-        shutil.move(self.temp_dir, self.install_location)
+setup(
+    app=APP,
+    data_files=DATA_FILES,
+    options={{'py2app': OPTIONS}},
+    setup_requires=['py2app'],
+)
+                """)
 
-        if sys.platform == "win32":
-            shortcut_path = os.path.join(os.environ["APPDATA"], "Microsoft\\Windows\\Start Menu\\Programs\\PyDAW.lnk")
-            command = f'powershell "$s=(New-Object -COM WScript.Shell).CreateShortcut(\'{shortcut_path}\');$s.TargetPath=\'{self.install_location}\\main.py\';$s.Save()"'
-            subprocess.run(command, shell=True, check=True)
-            self.log.emit("Shortcut created in Start Menu.")
-             
-        else:
-            shortcut_path = os.path.expanduser("~/Desktop/PyDAW.desktop")
-            with open(shortcut_path, "w") as f:
-                f.write(f"[Desktop Entry]\nName=PyDAW\nExec=python3 {self.install_location}/main.py\nType=Application\nIcon={self.install_location}/icon.png\n")
-            subprocess.run(["chmod", "+x", shortcut_path])
-            self.log.emit("Shortcut created on Desktop.")
+            # Run py2app to create the .app
+            subprocess.run([sys.executable, setup_py, "py2app"], check=True)
+
+            # Move the .app to the Applications folder
+            applications_folder = "/Applications"
+            if not os.path.exists(applications_folder):
+                os.makedirs(applications_folder)
+
+            app_name = "PyDAW.app"
+            target_path = os.path.join(applications_folder, app_name)
+
+            # Move the app
+            shutil.move(app_path, target_path)
+            self.log.emit(f"App successfully moved to {target_path}.")
 
     def cleanup(self):
-        """Remove temporary installation files."""
-        if os.path.exists(self.temp_dir):
-            self.log.emit("Cleaning up temporary files...")
-            try:
-                shutil.rmtree(self.temp_dir)
-                self.log.emit("Temporary files removed.")
-            except Exception as e:
-                self.log.emit(f"Failed to remove temp files: {e}")
+        """Clean up temporary files."""
+        pass
+
+    def is_installed(self, package_name):
+        """Check if a package is installed."""
+        try:
+            subprocess.run([package_name, "--version"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            return True
+        except subprocess.CalledProcessError:
+            return False
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
