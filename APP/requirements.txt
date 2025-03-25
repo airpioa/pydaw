@@ -1,9 +1,0 @@
-pygame==2.6.0
-PyQt6==6.2.0
-mido==1.2.9
-pydub==0.25.1
-dawdreamer
-PySide6
-chuck
-python-osc
-requests
