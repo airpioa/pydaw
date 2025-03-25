@@ -34,6 +34,11 @@ Download the installer.py script.
 
 Navigate to the directory where the installer.py script was downloaded.
 
+run
+```bash
+pip install PySide6
+```
+
 Proceed to Step 3.
 
 3. **Run the Installer Script**:
