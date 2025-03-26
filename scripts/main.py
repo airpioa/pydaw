@@ -20,7 +20,7 @@ def run_version_update_script():
 
 def main():
     # Run the version update script as a subprocess
-    #run_version_update_script()
+    run_version_update_script()
 
     # Ensure QApplication is created only once
     app = QApplication.instance()
