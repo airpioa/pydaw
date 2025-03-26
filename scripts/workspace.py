@@ -130,7 +130,7 @@ class WorkspaceWindow(QWidget):
         self.instrument_library.show()
 
     def stop_chuck_vm(self):
-        """Stop all running instruments (ChucK scripts)."""
+        """Stop all running instruments (ChucK scripts)"""
         self.chuck_manager.stop_all_instruments()
 
     def load_workspace(self):
