@@ -56,12 +56,6 @@ Proceed to Step 3.
 
 Once installed, you can launch **PyDAW** from your installation location or through the application shortcut created by the installer.
 
-To run PyDAW manually:
-
-```bash
-python daw.py
-```
-
 ---
 
 ## **Usage**
