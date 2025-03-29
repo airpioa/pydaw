@@ -4,7 +4,7 @@ import subprocess
 import json
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QMessageBox
 from PySide6.QtGui import QIcon
-from workspace import main as start_workspace  # Import the workspace main function
+from wsui import main as start_wsui  # Import the main function from wsui.py
 from config import SETTINGS_FILE
 
 # Ensure scripts directory exists
@@ -78,7 +78,7 @@ def main():
 
     # Add a button to start PyDAW workspaces
     start_button = QPushButton("Start PyDAW Workspace")
-    start_button.clicked.connect(start_workspace)  # Call the workspace main function
+    start_button.clicked.connect(start_wsui)  # Call the main function from wsui.py
     layout.addWidget(start_button)
 
     # Add an exit button
