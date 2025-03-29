@@ -1,13 +1,16 @@
 import sys
 import os
 import subprocess
-from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton
+import json
+from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QMessageBox
 from PySide6.QtGui import QIcon
-from ui import create_new_workspace, open_workspace  # Import workspace functions
+from workspace import main as start_workspace  # Import the workspace main function
+from config import SETTINGS_FILE
 
 # Ensure scripts directory exists
 SCRIPTS_DIR = os.path.expanduser("~/pydaw/scripts")
 os.makedirs(SCRIPTS_DIR, exist_ok=True)
+
 
 def run_version_update_script():
     """Run the version.py script to update the version if needed."""
@@ -18,9 +21,47 @@ def run_version_update_script():
     except subprocess.CalledProcessError as e:
         print(f"Error running version update script: {e}")
 
+
+def setup_auto_updates():
+    """Prompt the user to enable auto-updates on the first start."""
+    if not os.path.exists(SETTINGS_FILE):
+        config = {}
+    else:
+        with open(SETTINGS_FILE, "r") as f:
+            config = json.load(f)
+
+    # Check if auto-update is already enabled
+    if not config.get("auto_update_enabled", False):
+        # Prompt the user to enable auto-updates
+        app = QApplication.instance() or QApplication(sys.argv)
+        response = QMessageBox.question(
+            None,
+            "Enable Auto-Updates",
+            "Would you like to enable automatic updates for PyDAW?",
+            QMessageBox.Yes | QMessageBox.No
+        )
+
+        if response == QMessageBox.Yes:
+            config["auto_update_enabled"] = True
+            with open(SETTINGS_FILE, "w") as f:
+                json.dump(config, f, indent=4)
+            QMessageBox.information(None, "Auto-Updates Enabled", "Automatic updates have been enabled.")
+        else:
+            config["auto_update_enabled"] = False
+            with open(SETTINGS_FILE, "w") as f:
+                json.dump(config, f, indent=4)
+            QMessageBox.information(None, "Auto-Updates Disabled", "Automatic updates have been disabled.")
+
+    return config.get("auto_update_enabled", False)
+
+
 def main():
-    # Run the version update script as a subprocess
-    run_version_update_script()
+    # Prompt the user to set up auto-updates on the first start
+    auto_updates_enabled = setup_auto_updates()
+
+    # Run the version update script if auto-updates are enabled
+    if auto_updates_enabled:
+        run_version_update_script()
 
     # Ensure QApplication is created only once
     app = QApplication.instance()
@@ -34,9 +75,13 @@ def main():
     main_window.setWindowIcon(QIcon("icon.png"))
 
     layout = QVBoxLayout()
-    layout.addWidget(QPushButton("Create Workspace", clicked=create_new_workspace))
-    layout.addWidget(QPushButton("Open Workspace", clicked=open_workspace))
 
+    # Add a button to start PyDAW workspaces
+    start_button = QPushButton("Start PyDAW Workspace")
+    start_button.clicked.connect(start_workspace)  # Call the workspace main function
+    layout.addWidget(start_button)
+
+    # Add an exit button
     exit_button = QPushButton("Exit")
     exit_button.clicked.connect(app.quit)
     layout.addWidget(exit_button)
@@ -45,6 +90,7 @@ def main():
     main_window.show()
 
     sys.exit(app.exec())
+
 
 if __name__ == "__main__":
     main()

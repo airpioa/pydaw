@@ -46,3 +46,22 @@ class ChucKManager:
                 self.log_output(f"Terminated ChucK process.")
         # Clear the list of processes
         self.processes.clear()
+        self.log_output("All ChucK processes have been stopped.")
+    def stop_script(self, script_path): 
+        """Stop a specific ChucK script."""
+        for process in self.processes:
+            if process.poll() is None:
+                process.terminate()
+                self.log_output(f"Terminated ChucK script: {script_path}")
+        # Remove the process from the list
+        self.processes = [p for p in self.processes if p.poll() is not None]
+        self.log_output("ChucK script has been stopped.")
+    def stop_all_scripts(self):
+        """Stop all running ChucK scripts."""
+        for process in self.processes:
+            if process.poll() is None:
+                process.terminate()
+                self.log_output("Terminated all ChucK scripts.")
+        # Clear the list of processes
+        self.processes.clear()
+        self.log_output("All ChucK scripts have been stopped.")

@@ -1,4 +1,5 @@
 import os
+import json
 import subprocess
 import sys
 from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QLabel, QPushButton,
@@ -37,9 +38,7 @@ class InstallerUI(QWidget):
 
     def check_existing_install(self, install_location):
         """Check if PyDAW is already installed and prompt for update."""
-        pydaw_path = os.path.join(install_location, "pydaw")
-
-        if os.path.exists(pydaw_path):
+        if os.path.exists(install_location):
             reply = QMessageBox.question(
                 self, "Update PyDAW",
                 "PyDAW is already installed. Do you want to update it?",
@@ -54,6 +53,11 @@ class InstallerUI(QWidget):
         self.start_installation(install_location)
 
     def start_installation(self, install_location):
+        # Save the custom installation directory to a config file
+        config_file = os.path.expanduser("~/.pydaw_config.json")
+        with open(config_file, "w") as f:
+            json.dump({"install_dir": install_location}, f, indent=4)
+
         self.install_button.setEnabled(False)
         self.log_window.append("Starting installation...")
         self.worker = InstallWorker(install_location)
@@ -80,9 +84,9 @@ class InstallLocationDialog(QDialog):
 
         layout = QVBoxLayout()
 
-        self.install_location_label = QLabel("Enter installation directory (auto installs to path/pydaw):")
+        self.install_location_label = QLabel("Enter installation directory (default: ~/pydaw):")
         self.install_location = QLineEdit(self)
-        self.install_location.setText(os.path.expanduser("~/"))
+        self.install_location.setText(os.path.expanduser("~/pydaw"))
         layout.addWidget(self.install_location_label)
         layout.addWidget(self.install_location)
 
@@ -139,7 +143,7 @@ class InstallWorker(QThread):
 
         self.log.emit("Cloning PyDAW repository...")
         subprocess.run(["git", "clone", "https://github.com/airpioa/pydaw.git", pydaw_path], check=True)
-        self.log.emit("PyDAW cloned into path/pydaw.")
+        self.log.emit(f"PyDAW cloned into {pydaw_path}.")
 
     def install_requirements(self):
         self.log.emit("Installing Python requirements...")

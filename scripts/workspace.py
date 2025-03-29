@@ -1,42 +1,42 @@
 import os
-import json
 import sys
-from PySide6.QtCore import QThread, Signal
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QHBoxLayout,
-                               QPushButton, QTextEdit, QListWidget, QListWidgetItem, QSplitter, QApplication)
-from PySide6.QtGui import QIcon
-from chuck_handler import ChucKManager
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QAction, QIcon
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QPushButton, QTextEdit, QListWidget, QListWidgetItem,
+                               QApplication, QMainWindow, QToolBar, QDockWidget, QLineEdit, QMenu, QFileDialog, QInputDialog, QMessageBox)
+from chuck_handler import ChucKManager  # Import ChucKManager from chuck_handler.py
 
-workspace_instances = []  # Keep track of open workspaces
 
-class ChucKThread(QThread):
-    """Thread to run ChucK scripts in the background."""
-    script_finished = Signal(str)
+class ChucKConsole(QWidget):
+    """A separate window for the ChucK console."""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("ChucK Console")
+        self.setGeometry(300, 300, 600, 400)
 
-    def __init__(self, chuck_manager, script_path):
-        super().__init__()
-        self.chuck_manager = chuck_manager
-        self.script_path = script_path
+        self.layout = QVBoxLayout()
+        self.console = QTextEdit()
+        self.console.setReadOnly(True)
+        self.layout.addWidget(self.console)
+        self.setLayout(self.layout)
 
-    def run(self):
-        """Run the ChucK script in the background."""
-        try:
-            # Run the ChucK script using the ChucKManager instance
-            self.chuck_manager.run_script(self.script_path)
-            self.script_finished.emit(f"Finished running {self.script_path}")
-        except Exception as e:
-            self.script_finished.emit(f"Error running {self.script_path}: {e}")
+    def log_message(self, message):
+        """Log a message to the console."""
+        self.console.append(message)
+
 
 class InstrumentLibrary(QWidget):
-    def __init__(self, chuck_manager):
-        super().__init__()
+    """Instrument Library to display and load ChucK scripts."""
+    def __init__(self, chuck_manager, instruments_dir="instruments", parent=None):
+        super().__init__(parent)
         self.chuck_manager = chuck_manager
+        self.instruments_dir = instruments_dir  # Directory to search for instruments
         self.setWindowTitle("Instrument Library")
-        self.setGeometry(300, 300, 300, 600)
-        
+        self.setGeometry(300, 300, 400, 600)
+
         self.layout = QVBoxLayout()
         self.instrument_list = QListWidget()
-        self.load_instruments()  # Dynamically load instruments
+        self.load_instruments()
         self.layout.addWidget(self.instrument_list)
 
         self.load_button = QPushButton("Load Instrument")
@@ -44,121 +44,172 @@ class InstrumentLibrary(QWidget):
         self.layout.addWidget(self.load_button)
 
         self.setLayout(self.layout)
-    
-    def load_instruments(self):
-        instruments_folder = "~/pydaw/instruments"  # Define path to instruments folder
-        instruments_folder = os.path.expanduser(instruments_folder)  # Expand ~ to user home directory
+        self.setStyleSheet("QWidget { background-color: #f0f0f0; }")
 
-        # List all .ck files in the instruments folder (excluding config.status or any other irrelevant files)
-        try:
-            for filename in os.listdir(instruments_folder):
-                if filename.endswith(".ck") and filename != "config.status":  # Filter out config.status
-                    instrument_name = filename[:-3]  # Remove the .ck extension
-                    item = QListWidgetItem(instrument_name)
-                    self.instrument_list.addItem(item)
-        except FileNotFoundError:
-            print(f"Error: The instruments folder '{instruments_folder}' does not exist.")
-    
+    def load_instruments(self):
+        """Recursively load all .ck files from the instruments directory and its subdirectories."""
+        self.instrument_list.clear()  # Clear the list before loading
+        if not os.path.exists(self.instruments_dir):
+            print(f"Error: Instruments directory '{self.instruments_dir}' does not exist.")
+            return
+
+        for root, _, files in os.walk(self.instruments_dir):
+            for filename in files:
+                if filename.endswith(".ck"):  # Only include .ck files
+                    relative_path = os.path.relpath(os.path.join(root, filename), self.instruments_dir)
+                    self.instrument_list.addItem(relative_path)
+
+        if self.instrument_list.count() == 0:
+            self.instrument_list.addItem("No instruments found.")
+
     def load_selected_instrument(self):
+        """Load the selected instrument and run its ChucK script."""
         selected_item = self.instrument_list.currentItem()
         if selected_item:
-            instrument_name = selected_item.text()
-            chuck_script = os.path.expanduser(f"~/pydaw/instruments/{instrument_name}.ck")  # Correct path
-
-            # Run the script in the background using a new thread
-            self.chuck_thread = ChucKThread(self.chuck_manager, chuck_script)
-            self.chuck_thread.start()
-
-            # Optionally, connect a signal to display when the script finishes
-            self.chuck_thread.script_finished.connect(self.handle_script_finished)
-
-    def handle_script_finished(self, message):
-        print(message)  # You can display this in the UI, log it, or perform other actions
+            relative_path = selected_item.text()
+            script_path = os.path.join(self.instruments_dir, relative_path)
+            self.chuck_manager.run_script(script_path)
 
 
-class WorkspaceWindow(QWidget):
+class Timeline(QWidget):
+    """A basic timeline widget for the workspace."""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Timeline")
+        self.setGeometry(0, 0, 800, 100)
+        self.setStyleSheet("QWidget { background-color: #e0e0e0; }")
+
+        layout = QVBoxLayout()
+        label = QLabel("Timeline Placeholder")
+        layout.addWidget(label)
+        self.setLayout(layout)
+
+
+class WorkspaceWindow(QMainWindow):
+    """Main workspace window for managing ChucK scripts and instruments."""
     def __init__(self, workspace_name="New Workspace", workspace_path=""):
         super().__init__()
-        self.setWindowTitle(f"{workspace_name} - pydaw")
+        self.setWindowTitle(f"{workspace_name} - PyDAW")
+        self.workspace_path = workspace_path  # Store the workspace path
         self.setGeometry(200, 200, 1000, 600)
-        self.workspace_path = workspace_path
         self.setWindowIcon(QIcon("icon.png"))
 
-        self.layout = QVBoxLayout()
-        
-        # Toolbar with Return Button
-        self.toolbar = QHBoxLayout()
-        self.back_button = QPushButton("Return to Main Menu")
-        self.back_button.clicked.connect(self.close)
-        self.toolbar.addWidget(self.back_button)
-        
-        self.open_instrument_library_button = QPushButton("Open Instrument Library")
-        self.open_instrument_library_button.clicked.connect(self.open_instrument_library)
-        self.toolbar.addWidget(self.open_instrument_library_button)
-        
-        # Stop ChucK VM Button
-        self.stop_chuck_button = QPushButton("Stop ChucK VM")
-        self.stop_chuck_button.clicked.connect(self.stop_chuck_vm)
-        self.toolbar.addWidget(self.stop_chuck_button)
-        
-        self.layout.addLayout(self.toolbar)
-        
-        # Splitter to separate timeline and console
-        self.splitter = QSplitter()
-        
-        # Timeline Placeholder
-        self.timeline_label = QLabel("Timeline")
-        self.splitter.addWidget(self.timeline_label)
-        
-        # ChucK Console Window
-        self.chuck_console = QTextEdit()
-        self.chuck_console.setReadOnly(True)
-        self.splitter.addWidget(self.chuck_console)
-        
-        self.layout.addWidget(self.splitter)
-        self.setLayout(self.layout)
-        
-        self.chuck_manager = ChucKManager(self.chuck_console)
-        self.instrument_library = None
-        
-        # Load workspace contents
-        self.load_workspace()
-    
-    def open_instrument_library(self):
-        if not self.instrument_library:
-            self.instrument_library = InstrumentLibrary(self.chuck_manager)
-        self.instrument_library.show()
+        # Initialize ChucKManager
+        self.chuck_console_window = ChucKConsole()
+        self.chuck_manager = ChucKManager(console=self.chuck_console_window.console)
 
-    def stop_chuck_vm(self):
-        """Stop all running instruments (ChucK scripts)"""
+        # Initialize tempo
+        self.tempo = 120  # Default tempo
+
+        # Toolbar
+        self.toolbar = QToolBar("Main Toolbar")
+        self.addToolBar(self.toolbar)
+
+        # Add toolbar actions
+        self.add_toolbar_actions()
+
+        # Initialize windows
+        self.instrument_library_window = InstrumentLibrary(self.chuck_manager, instruments_dir=os.path.join(self.workspace_path, "instruments"))
+        self.timeline = Timeline()
+
+        # Add dockable widgets
+        self.add_dockable_widgets()
+
+    def add_toolbar_actions(self):
+        """Add actions to the toolbar."""
+        # Tempo display and edit
+        self.tempo_display = QLineEdit(f"Tempo: {self.tempo} BPM")
+        self.tempo_display.setReadOnly(True)
+        self.tempo_display.setFixedWidth(120)
+        self.tempo_display.setStyleSheet("background-color: #f0f0f0;")
+        self.toolbar.addWidget(self.tempo_display)
+
+        # Views dropdown menu
+        views_menu = QMenu("Views", self)
+        toggle_timeline_action = QAction("Toggle Timeline", self)
+        toggle_timeline_action.triggered.connect(self.toggle_timeline)
+        views_menu.addAction(toggle_timeline_action)
+
+        toggle_console_action = QAction("Toggle ChucK Console", self)
+        toggle_console_action.triggered.connect(self.toggle_console)
+        views_menu.addAction(toggle_console_action)
+
+        toggle_instruments_action = QAction("Toggle Instrument Library", self)
+        toggle_instruments_action.triggered.connect(self.toggle_instruments)
+        views_menu.addAction(toggle_instruments_action)
+
+        views_menu_action = self.toolbar.addAction("Views")
+        views_menu_action.setMenu(views_menu)
+
+    def add_dockable_widgets(self):
+        """Add dockable widgets to the main window."""
+        # Timeline
+        self.timeline_dock = QDockWidget("Timeline", self)
+        self.timeline_dock.setWidget(self.timeline)
+        self.addDockWidget(Qt.TopDockWidgetArea, self.timeline_dock)
+
+        # ChucK Console
+        self.console_dock = QDockWidget("ChucK Console", self)
+        self.console_dock.setWidget(self.chuck_console_window)
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.console_dock)
+
+        # Instrument Library
+        self.instruments_dock = QDockWidget("Instrument Library", self)
+        self.instruments_dock.setWidget(self.instrument_library_window)
+        self.addDockWidget(Qt.RightDockWidgetArea, self.instruments_dock)
+
+    def toggle_timeline(self):
+        """Toggle the visibility of the timeline dock."""
+        self.timeline_dock.setVisible(not self.timeline_dock.isVisible())
+
+    def toggle_console(self):
+        """Toggle the visibility of the ChucK console dock."""
+        self.console_dock.setVisible(not self.console_dock.isVisible())
+
+    def toggle_instruments(self):
+        """Toggle the visibility of the instrument library dock."""
+        self.instruments_dock.setVisible(not self.instruments_dock.isVisible())
+
+    def closeEvent(self, event):
+        """Handle the close event to stop ChucK scripts."""
         self.chuck_manager.stop_all_instruments()
-
-    def load_workspace(self):
-        manifest_path = os.path.join(self.workspace_path, "manifest.json")
-        if os.path.exists(manifest_path):
-            with open(manifest_path, "r") as f:
-                manifest_data = json.load(f)
-            self.load_chuck_scripts(manifest_data)
-    
-    def load_chuck_scripts(self, manifest_data):
-        if "chuck_scripts" in manifest_data:
-            for script_path in manifest_data["chuck_scripts"]:
-                self.chuck_manager.run_script(script_path)
+        event.accept()
 
 
 def open_workspace_window(workspace_name, workspace_path):
-    global workspace_instances
+    """Open a new workspace window."""
     window = WorkspaceWindow(workspace_name, workspace_path)
-    workspace_instances.append(window)
     window.show()
 
 
-# Main function to start the application
 def main():
-    app = QApplication(sys.argv)
-    # Example workspace name and path, this can be dynamically chosen
-    open_workspace_window("Sample Workspace", "~/pydaw/workspaces/sample_workspace")
-    sys.exit(app.exec())
+    """Main entry point for the application."""
+    # Use the existing QApplication instance if it exists
+    app = QApplication.instance()
+    if not app:
+        app = QApplication(sys.argv)
 
-if __name__ == "__main__":
-    main()
+    # Prompt user to create or open a workspace
+    choice, ok = QInputDialog.getItem(
+        None,
+        "Workspace",
+        "Choose an option:",
+        ["Create New Workspace", "Open Existing Workspace"],
+        editable=False,
+    )
+
+    if ok and choice == "Create New Workspace":
+        workspace_name, ok = QInputDialog.getText(None, "Create New Workspace", "Workspace Name:")
+        if ok and workspace_name:
+            workspace_path = os.path.expanduser(f"~/pydaw/workspaces/{workspace_name}")
+            os.makedirs(workspace_path, exist_ok=True)
+            open_workspace_window(workspace_name, workspace_path)
+    elif ok and choice == "Open Existing Workspace":
+        workspace_path = QFileDialog.getExistingDirectory(None, "Open Workspace", os.path.expanduser("~/pydaw/workspaces"))
+        if workspace_path:
+            workspace_name = os.path.basename(workspace_path)
+            open_workspace_window(workspace_name, workspace_path)
+
+    # Only call app.exec() if this script is run directly
+    if __name__ == "__main__":
+        sys.exit(app.exec())

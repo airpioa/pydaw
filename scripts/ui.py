@@ -2,18 +2,19 @@ import os
 import json
 import sys
 
+# Ensure the scripts directory is in the Python path
 sys.path.append(os.path.expanduser("~/pydaw"))
 sys.path.append(os.path.expanduser("~/pydaw/scripts"))
 
-
 from PySide6.QtWidgets import QFileDialog, QInputDialog, QMessageBox, QApplication
-from workspace import open_workspace_window
+from workspace import open_workspace_window  # Import the function from workspace.py
 from config import WORKSPACES_DIR
 
 app = QApplication(sys.argv)
 
 
 def create_new_workspace():
+    """Create a new workspace."""
     workspace_name, ok = QInputDialog.getText(None, "Create New Workspace", "Workspace Name:")
     if ok and workspace_name:
         workspace_path = os.path.join(WORKSPACES_DIR, workspace_name)
@@ -32,7 +33,9 @@ def create_new_workspace():
         except Exception as e:
             QMessageBox.critical(None, "Error", f"An error occurred while creating the workspace:\n{e}")
 
+
 def open_workspace():
+    """Open an existing workspace."""
     workspace_path = QFileDialog.getExistingDirectory(None, "Open Workspace", WORKSPACES_DIR)
     if workspace_path:
         workspace_name = os.path.basename(workspace_path)
