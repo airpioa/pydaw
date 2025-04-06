@@ -26,8 +26,8 @@ class ChucKConsole(QTextEdit):
 
     def log_error(self, error_message):
         """Log an error message to the console."""
-        self.append(f"<span style='color: red;'>ERROR: {error_message}</span>")
-
+        sanitized_error_message = html.escape(error_message)
+        self.append(f"<span style='color: red;'>ERROR: {sanitized_error_message}</span>")
 
 class InstrumentLibrary(QWidget):
     """Instrument Library to display and load ChucK scripts and play audio files."""
