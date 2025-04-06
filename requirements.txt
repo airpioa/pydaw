@@ -1,10 +1,10 @@
-pygame==2.6.0
-PyQt6==6.2.0
-mido==1.2.9
-pydub==0.25.1
-dawdreamer
-PySide6
-chuck
-python-osc
-requests
-py2app
+PySide6==6.5.1          # For the PySide6 GUI framework
+pygame==2.6.0           # For audio playback and manipulation
+mido==1.2.9             # For MIDI file handling
+pydub==0.25.1           # For audio file manipulation
+dawdreamer              # For audio synthesis and effects
+chuck                   # For ChucK script execution
+python-osc              # For Open Sound Control (OSC) communication
+requests                # For HTTP requests (if needed for updates or APIs)
+ffmpeg-python           # For FFmpeg integration (audio recording and processing)
+wave                    # For handling WAV files
