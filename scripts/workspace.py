@@ -1,8 +1,11 @@
 import os
 import subprocess
+import wave
+import threading
+import sys
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QDockWidget, QToolBar, QLineEdit, QMenu, QListWidget,
-    QVBoxLayout, QLabel, QWidget, QPushButton, QDialog, QSpinBox, QTextEdit, QSizePolicy
+    QVBoxLayout, QLabel, QWidget, QPushButton, QDialog, QSpinBox, QTextEdit, QSizePolicy, QSlider
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon, QAction, QMouseEvent
@@ -21,6 +24,10 @@ class ChucKConsole(QTextEdit):
         """Log a message to the console."""
         self.append(message)
 
+    def log_error(self, error_message):
+        """Log an error message to the console."""
+        sanitized_error_message = html.escape(error_message)
+        self.append(f"<span style='color: red;'>ERROR: {sanitized_error_message}</span>")
 
 class InstrumentLibrary(QWidget):
     """Instrument Library to display and load ChucK scripts and play audio files."""
@@ -106,19 +113,42 @@ class InstrumentLibrary(QWidget):
             # Store the process in the dictionary
             self.audio_processes[file_path] = process
         except Exception as e:
-            self.console.log(f"Error playing audio file {file_path}: {e}")
+            self.console.log_error(f"Error playing audio file {file_path}: {e}")
+
+
+class ViewsWindow(QDialog):
+    """Window to manage views."""
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Views")
+        self.setGeometry(300, 300, 200, 150)
+
+        self.layout = QVBoxLayout()
+        self.console_button = QPushButton("Toggle Console")
+        self.instrument_library_button = QPushButton("Toggle Instrument Library")
+        self.timeline_button = QPushButton("Toggle Timeline")
+
+        self.layout.addWidget(self.console_button)
+        self.layout.addWidget(self.instrument_library_button)
+        self.layout.addWidget(self.timeline_button)
+
+        self.setLayout(self.layout)
 
 
 class Timeline(QWidget):
-    """A basic timeline widget for the workspace."""
-    def __init__(self, parent=None):
+    """A timeline widget for recording and mixing audio from ChucK scripts."""
+    def __init__(self, chuck_manager, workspace_path, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Timeline")
+        self.chuck_manager = chuck_manager
+        self.workspace_path = workspace_path
+        self.layout = QVBoxLayout()
 
-        layout = QVBoxLayout()
-        label = QLabel("Timeline Placeholder")
-        layout.addWidget(label)
-        self.setLayout(layout)
+        # Add a placeholder label
+        self.label = QLabel("Timeline - Record and Mix Audio")
+        self.layout.addWidget(self.label)
+
+        self.setLayout(self.layout)
 
 
 class TempoDialog(QDialog):
@@ -149,25 +179,6 @@ class TempoDialog(QDialog):
     def get_tempo(self):
         """Return the selected tempo."""
         return self.tempo_spinbox.value()
-
-
-class ViewsWindow(QDialog):
-    """Window to manage views."""
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Views")
-        self.setGeometry(300, 300, 200, 150)
-
-        self.layout = QVBoxLayout()
-        self.console_button = QPushButton("Toggle Console")
-        self.instrument_library_button = QPushButton("Toggle Instrument Library")
-        self.timeline_button = QPushButton("Toggle Timeline")
-
-        self.layout.addWidget(self.console_button)
-        self.layout.addWidget(self.instrument_library_button)
-        self.layout.addWidget(self.timeline_button)
-
-        self.setLayout(self.layout)
 
 
 class WorkspaceWindow(QMainWindow):
@@ -282,7 +293,7 @@ class WorkspaceWindow(QMainWindow):
         self.addDockWidget(Qt.RightDockWidgetArea, self.instrument_library_dock)
 
         # Timeline
-        self.timeline = Timeline()
+        self.timeline = Timeline(self.chuck_manager, self.workspace_path)
         self.timeline_dock = QDockWidget("Timeline", self)
         self.timeline_dock.setWidget(self.timeline)
         self.addDockWidget(Qt.TopDockWidgetArea, self.timeline_dock)
@@ -303,8 +314,13 @@ class WorkspaceWindow(QMainWindow):
 # Global variable to keep the WorkspaceWindow instance in scope
 workspace_window = None
 
+
 def open_workspace_window(workspace_name, workspace_path):
     """Open a new workspace window."""
     global workspace_window
+    app = QApplication.instance()
+    if not app:
+        app = QApplication(sys.argv)
+
     workspace_window = WorkspaceWindow(workspace_name, workspace_path)
     workspace_window.show()
