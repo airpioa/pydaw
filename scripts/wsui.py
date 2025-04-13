@@ -39,6 +39,17 @@ def open_existing_workspace():
     workspace_path = QFileDialog.getExistingDirectory(None, "Open Workspace", WORKSPACES_DIR)
     if workspace_path:
         workspace_name = os.path.basename(workspace_path)
+
+        # Load manifest file for faster initialization
+        manifest_path = os.path.join(workspace_path, "manifest.json")
+        if os.path.exists(manifest_path):
+            try:
+                with open(manifest_path, "r") as f:
+                    manifest_data = json.load(f)
+                print(f"Loaded manifest for workspace '{workspace_name}': {manifest_data}")
+            except json.JSONDecodeError as e:
+                QMessageBox.warning(None, "Error", f"Failed to load manifest for '{workspace_name}': {e}")
+
         open_workspace_window(workspace_name, workspace_path)
 
 

@@ -40,11 +40,11 @@ class ChucKManager:
             self.log_output(f"No running process found for script: {script_path}")
 
     def stop_all_scripts(self):
-        """Stop all running ChucK scripts."""
+        """Forcefully stop all running ChucK scripts."""
         for script_path, process in list(self.processes.items()):
             if process.poll() is None:  # Check if the process is running
-                process.terminate()  # Terminate the process
+                process.kill()  # Forcefully terminate the process
                 process.wait()  # Wait for the process to terminate
-                self.log_output(f"Stopped ChucK script: {script_path}")
+                self.log_output(f"Forcefully stopped ChucK script: {script_path}")
         self.processes.clear()  # Clear the dictionary
-        self.log_output("All ChucK scripts have been stopped.")
+        self.log_output("All ChucK scripts have been forcefully stopped.")
