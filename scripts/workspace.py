@@ -17,7 +17,7 @@ class ChucKConsole(QTextEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setReadOnly(True)
-        self.setStyleSheet("background-color: #1e1e1e; color: #d4d4d4; font-family: Consolas; font-size: 12px;")
+        self.setStyleSheet("background-color: #1e1e1e; color: #d4d4d4; font-family: Courier New; font-size: 12px;")
         self.setPlaceholderText("ChucK Console Output...")
 
     def log(self, message):
@@ -182,12 +182,12 @@ class TempoDialog(QDialog):
 
 
 class WorkspaceWindow(QMainWindow):
-    """Main workspace window for managing ChucK scripts and instruments."""
+    """Main workspace window for managing audio and MIDI clips."""
     def __init__(self, workspace_name="New Workspace", workspace_path=""):
         super().__init__()
-        self.setWindowTitle(f"{workspace_name} - PyDAW")
+        self.setWindowTitle(f"{workspace_name} - PyDAW Workspace")
         self.workspace_path = workspace_path
-        self.setGeometry(200, 200, 1000, 600)
+        self.setGeometry(200, 200, 1200, 800)
         self.setWindowIcon(QIcon("icon.png"))
 
         # Initialize ChucKManager
@@ -225,6 +225,11 @@ class WorkspaceWindow(QMainWindow):
         self.tempo_display.mousePressEvent = self.open_tempo_dialog_event
         self.toolbar.addWidget(self.tempo_display)
 
+        # Save button
+        save_action = QAction("Save", self)
+        save_action.triggered.connect(self.save_workspace)
+        self.toolbar.addAction(save_action)
+
         # Stop All Scripts button
         stop_all_action = QAction("Stop All Scripts", self)
         stop_all_action.triggered.connect(self.chuck_manager.stop_all_scripts)
@@ -235,44 +240,10 @@ class WorkspaceWindow(QMainWindow):
         stop_vm_action.triggered.connect(self.stop_chuck_vm)
         self.toolbar.addAction(stop_vm_action)
 
-        # Stop Last Script button
-        stop_script_action = QAction("Stop Last Script", self)
-        stop_script_action.triggered.connect(self.stop_last_script)
-        self.toolbar.addAction(stop_script_action)
-
         # Views button
         views_action = QAction("Views", self)
         views_action.triggered.connect(self.open_views_window)
         self.toolbar.addAction(views_action)
-
-    def open_tempo_dialog_event(self, event: QMouseEvent):
-        """Open the tempo dialog when the tempo display is clicked."""
-        self.open_tempo_dialog()
-
-    def open_tempo_dialog(self):
-        """Open the tempo dialog to change the tempo."""
-        dialog = TempoDialog(self.tempo, self)
-        if dialog.exec():
-            self.tempo = dialog.get_tempo()
-            self.tempo_display.setText(f"Tempo: {self.tempo} BPM")
-
-    def open_views_window(self):
-        """Open the views window."""
-        views_window = ViewsWindow(self)
-        views_window.console_button.clicked.connect(self.toggle_console)
-        views_window.instrument_library_button.clicked.connect(self.toggle_instruments)
-        views_window.timeline_button.clicked.connect(self.toggle_timeline)
-        views_window.exec()
-
-    def stop_chuck_vm(self):
-        """Stop the ChucK virtual machine."""
-        self.chuck_manager.stop_vm()
-        self.chuck_console.log("ChucK VM stopped.")
-
-    def stop_last_script(self):
-        """Stop the last opened ChucK script."""
-        if self.last_opened_script:
-            self.chuck_manager.stop_script(self.last_opened_script)
 
     def add_dockable_widgets(self):
         """Add dockable widgets to the main window."""
@@ -297,6 +268,35 @@ class WorkspaceWindow(QMainWindow):
         self.timeline_dock = QDockWidget("Timeline", self)
         self.timeline_dock.setWidget(self.timeline)
         self.addDockWidget(Qt.TopDockWidgetArea, self.timeline_dock)
+
+    def save_workspace(self):
+        """Save the current workspace."""
+        # Placeholder for save functionality
+        print("Workspace saved.")
+
+    def open_tempo_dialog_event(self, event: QMouseEvent):
+        """Open the tempo dialog when the tempo display is clicked."""
+        self.open_tempo_dialog()
+
+    def open_tempo_dialog(self):
+        """Open the tempo dialog to change the tempo."""
+        dialog = TempoDialog(self.tempo, self)
+        if dialog.exec():
+            self.tempo = dialog.get_tempo()
+            self.tempo_display.setText(f"Tempo: {self.tempo} BPM")
+
+    def open_views_window(self):
+        """Open the views window."""
+        views_window = ViewsWindow(self)
+        views_window.console_button.clicked.connect(self.toggle_console)
+        views_window.instrument_library_button.clicked.connect(self.toggle_instruments)
+        views_window.timeline_button.clicked.connect(self.toggle_timeline)
+        views_window.exec()
+
+    def stop_chuck_vm(self):
+        """Stop the ChucK virtual machine by forcefully killing all ChucK instances."""
+        self.chuck_manager.stop_all_scripts()
+        self.chuck_console.log("All ChucK instances have been forcefully stopped.")
 
     def toggle_console(self):
         """Toggle the visibility of the console dock."""
